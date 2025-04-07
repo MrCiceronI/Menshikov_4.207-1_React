@@ -1,0 +1,16 @@
+.lab-content {
+    padding: 20px;
+  }
+  
+  .lab-content h3 {
+    color: #1976d2;
+    margin-bottom: 15px;
+  }
+  
+  .lab-content ul {
+    padding-left: 20px;
+  }
+  
+  .lab-content li {
+    margin-bottom: 8px;
+  }

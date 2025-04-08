@@ -22,7 +22,12 @@ const Menu = ({ isOpen, onClose }) => { // Принимает пропсы:
   const labs = [
     { id: 1, title: "Лабораторная 1", icon: <Code /> },
     { id: 2, title: "Лабораторная 2", icon: <Code /> },
-    // ... остальные лабораторные
+    { id: 3, title: "Лабораторная 3", icon: <Code /> },
+    { id: 4, title: "Лабораторная 4", icon: <Code /> },
+    { id: 5, title: "Лабораторная 5", icon: <Code /> },
+    { id: 6, title: "Лабораторная 6", icon: <Code /> },
+    { id: 7, title: "Лабораторная 7", icon: <Code /> },
+    { id: 8, title: "Лабораторная 8", icon: <Code /> },
     { id: 9, title: "Лабораторная 9", icon: <Code /> }
   ];
 

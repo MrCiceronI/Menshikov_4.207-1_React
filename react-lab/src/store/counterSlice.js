@@ -1,3 +1,4 @@
+// src/store/counterSlice.js
 // Импорт функции создания слайса из Redux Toolkit
 import { createSlice } from '@reduxjs/toolkit';
 

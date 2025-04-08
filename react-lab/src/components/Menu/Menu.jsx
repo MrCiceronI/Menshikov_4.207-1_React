@@ -1,24 +1,42 @@
 // src/components/Menu/Menu.jsx
+// Импорт React и необходимых зависимостей
 import React from 'react';
-import './Menu.css'; // Стили компонента меню
+import './Menu.css'; // Локальные стили компонента
+
+// Импорт компонентов Material-UI
 import { 
-  Drawer, // Компонент выдвижной панели
-  List, // Контейнер для списка элементов
-  ListItem, // Элемент списка
-  ListItemIcon, // Контейнер для иконки элемента
-  ListItemText // Текст элемента
-} from '@mui/material'; // Импорт компонентов Material-UI
-import { Home, Code } from '@mui/icons-material'; // Импорт иконок
-import { Link } from 'react-router-dom'; // Компонент для навигации
-import { useTheme } from '../../context/ThemeContext'; // Контекст темы
+  Drawer,       // Боковая выдвижная панель
+  List,         // Контейнер для списка
+  ListItem,     // Элемент списка
+  ListItemIcon, // Обертка для иконки
+  ListItemText  // Текст элемента
+} from '@mui/material';
 
-// Компонент бокового меню
-const Menu = ({ isOpen, onClose }) => { // Принимает пропсы:
-                                        // isOpen - состояние меню (открыто/закрыто)
-                                        // onClose - функция закрытия меню
-  const { isDarkMode } = useTheme(); // Получаем текущую тему
+// Импорт иконок из Material-UI
+import { Home, Code } from '@mui/icons-material';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 
-  // Массив лабораторных работ
+// Импорт компонентов маршрутизации и контекста
+import { Link } from 'react-router-dom'; // Для навигации между страницами
+import { useTheme } from '../../context/ThemeContext'; // Доступ к теме приложения
+import { useSelector } from 'react-redux'; // Доступ к Redux store
+
+/**
+ * Компонент бокового меню приложения
+ * 
+ * @param {Object} props - Свойства компонента
+ * @param {boolean} props.isOpen - Флаг открытого состояния меню
+ * @param {Function} props.onClose - Функция закрытия меню
+ * @returns {JSX.Element} - Возвращает JSX разметку меню
+ */
+const Menu = ({ isOpen, onClose }) => {
+  // Получаем текущую тему из контекста
+  const { isDarkMode } = useTheme();
+  
+  // Проверяем статус авторизации пользователя
+  const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
+
+  // Массив лабораторных работ с иконками
   const labs = [
     { id: 1, title: "Лабораторная 1", icon: <Code /> },
     { id: 2, title: "Лабораторная 2", icon: <Code /> },
@@ -32,26 +50,31 @@ const Menu = ({ isOpen, onClose }) => { // Принимает пропсы:
   ];
 
   return (
-    // Drawer - выдвижная панель меню
+    /**
+     * Компонент Drawer создает боковую панель
+     * PaperProps позволяет кастомизировать стили панели
+     */
     <Drawer 
-      open={isOpen} // Управление видимостью (из пропсов)
-      onClose={onClose} // Обработчик закрытия (из пропсов)
-      PaperProps={{ // Стилизация внутренней части Drawer
+      open={isOpen}       // Управление видимостью
+      onClose={onClose}   // Обработчик закрытия
+      PaperProps={{
         style: {
-          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон по теме
-          color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста по теме
+          // Динамические стили в зависимости от темы
+          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+          color: isDarkMode ? '#ffffff' : '#000000',
+          width: 250 // Фиксированная ширина меню
         }
       }}
     >
-      {/* List - контейнер для элементов меню */}
+      {/* Контейнер для элементов меню */}
       <List>
         {/* Пункт меню "Главная" */}
         <ListItem 
-          button // Делаем элемент кликабельным
+          button           // Делает элемент кликабельным
           component={Link} // Используем как ссылку
-          to="/" // Ссылка на главную
+          to="/"          // Ссылка на главную
           onClick={onClose} // Закрываем меню при клике
-          style={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет текста
+          style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
         >
           <ListItemIcon>
             <Home style={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
@@ -59,18 +82,34 @@ const Menu = ({ isOpen, onClose }) => { // Принимает пропсы:
           <ListItemText primary="Главная" />
         </ListItem>
 
+        {/* Условный рендеринг для авторизованных пользователей */}
+        {isLoggedIn && (
+          <ListItem 
+            button
+            component={Link}
+            to="/feedback"
+            onClick={onClose}
+            style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
+          >
+            <ListItemIcon>
+              <FeedbackIcon style={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
+            </ListItemIcon>
+            <ListItemText primary="Обратная связь" />
+          </ListItem>
+        )}
+
         {/* Динамическое создание пунктов меню для лабораторных */}
         {labs.map((lab) => (
           <ListItem 
             button
             component={Link}
-            to={`/lab/${lab.id}`} // Ссылка на лабораторную
-            key={lab.id} // Уникальный ключ
-            onClick={onClose} // Закрытие меню при клике
+            to={`/lab/${lab.id}`}
+            key={lab.id} // Уникальный ключ для React
+            onClick={onClose}
             style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
           >
             <ListItemIcon>
-              <Code style={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
+              {lab.icon}
             </ListItemIcon>
             <ListItemText primary={lab.title} />
           </ListItem>

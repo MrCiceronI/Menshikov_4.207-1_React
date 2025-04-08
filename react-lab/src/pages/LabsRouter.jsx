@@ -1,3 +1,4 @@
+// src/pages/LabsRouter.jsx
 // Импорт необходимых компонентов из react-router-dom
 import { Routes, Route } from 'react-router-dom';
 

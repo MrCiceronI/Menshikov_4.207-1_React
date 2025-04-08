@@ -1,4 +1,4 @@
-// pages/CounterPage.js
+// src/pages/AuthPage.jsx
 import { useState, useEffect } from 'react'; // Импорт хуков React
 import { useSelector, useDispatch } from 'react-redux'; // Redux хуки
 // Импорт экшенов из слайса счетчика

@@ -1,32 +1,17 @@
 // src/store/store.js
-
 // Импорт функции configureStore из Redux Toolkit
+// configureStore упрощает создание Redux-хранилища с хорошими настройками по умолчанию
 import { configureStore } from '@reduxjs/toolkit';
 
-// Импорт редьюсера счетчика
-import counterReducer from './counterSlice';
+// Импорт редьюсеров из отдельных слайсов
+import counterReducer from './counterSlice'; // Редьюсер для счетчика (пример)
+import authReducer from './authSlice';      // Редьюсер для аутентификации
 
 // Создание и экспорт Redux-хранилища
 export const store = configureStore({
-  // Объект редьюсеров, где:
-  // ключ - имя ветки состояния (counter)
-  // значение - редьюсер, управляющий этой веткой
+  // Объект reducer, который объединяет все редьюсеры приложения
   reducer: {
-    counter: counterReducer,
-  },
-  
-  // Redux Toolkit автоматически добавляет:
-  // 1. Redux DevTools Extension
-  // 2. Middleware (включая redux-thunk)
-  // 3. Проверку на случайные мутации состояния
-  // 4. Сериализацию данных
+    counter: counterReducer, // Состояние счетчика будет доступно под ключом 'counter'
+    auth: authReducer        // Состояние аутентификации под ключом 'auth'
+  }
 });
-
-/*
- * Получающаяся структура состояния:
- * {
- *   counter: {
- *     value: 0
- *   }
- * }
- */

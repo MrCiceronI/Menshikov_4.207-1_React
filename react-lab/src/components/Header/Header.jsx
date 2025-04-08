@@ -14,11 +14,14 @@ import MenuIcon from '@mui/icons-material/Menu'; // Иконка меню (га�
 import Brightness4Icon from '@mui/icons-material/Brightness4'; // Иконка "темная тема"
 import Brightness7Icon from '@mui/icons-material/Brightness7'; // Иконка "светлая тема"
 import { useTheme } from '../../context/ThemeContext'; // Контекст темы
+import UserProfile from '../User/UserProfile';
+import { useSelector } from 'react-redux';
 
 // Компонент Header - шапка приложения
 const Header = ({ onMenuToggle }) => { // Принимает пропс onMenuToggle для управления меню
   // Получаем текущую тему и функцию для её переключения из контекста
   const { isDarkMode, toggleTheme } = useTheme();
+  const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
 
   // Возвращаем JSX для рендеринга
   return (
@@ -64,6 +67,7 @@ const Header = ({ onMenuToggle }) => { // Принимает пропс onMenuTo
           {/* Темный режим: иконка солнца (светлая тема) */}
           {/* Светлый режим: иконка луны (темная тема) */}
         </IconButton>
+        {isLoggedIn && <UserProfile />}
       </Toolbar>
     </AppBar>
   );

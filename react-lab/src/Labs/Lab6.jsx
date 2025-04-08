@@ -4,7 +4,6 @@ import './Lab.css';
 const Lab6 = () => {
   return (
     <div className="lab-content">
-      <h3>Лабораторная работа 6</h3>
       <ul>
         <li>Реализовать или использовать простой REST сервер</li>
         <li>Реализовать несколько (GET, POST, PUT, DELETE) запросов на сервер используя промисы JS (fetch, axios).</li>

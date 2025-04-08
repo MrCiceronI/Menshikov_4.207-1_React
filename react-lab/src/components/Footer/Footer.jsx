@@ -1,27 +1,39 @@
-// Импорт необходимых библиотек и компонентов
-import React from 'react'; // Основная библиотека React
-import './Footer.css'; // Файл стилей для этого компонента
-import { Box, Typography } from '@mui/material'; // Компоненты Material-UI для оформления
+// src/components/Footer/Footer.jsx
+// Импорт необходимых библиотек и модулей
+import React from 'react'; // Базовый импорт React
+import './Footer.css'; // Стили компонента Footer
+import { Box, Typography } from '@mui/material'; // Компоненты Material-UI
+import { useTheme } from '../../context/ThemeContext'; // Контекст темы (темный/светлый режим)
 
-// Компонент Footer (подвал сайта)
+// Компонент Footer - подвал сайта
 const Footer = () => {
-  // Возвращаем JSX для рендеринга подвала
+  // Получаем текущую тему (темный/светлый режим) из контекста
+  const { isDarkMode } = useTheme();
+
+  // Возвращаем JSX для рендеринга
   return (
-    /*
-      Компонент Box - это базовый контейнер Material-UI
-      Здесь он используется как обертка для содержимого подвала
-      К нему применяется CSS-класс 'footer' для дополнительного стилирования
-    */
-    <Box className="footer">
-      {/*
-        Компонент Typography для текста с определенными свойствами:
-        - variant="body2" - стиль текста (меньший чем body1)
-        - color="textSecondary" - цвет текста (вторичный, обычно серый)
-        - align="center" - выравнивание по центру
-      */}
-      {/* Текст копирайта */}
-      <Typography variant="body2" color="textSecondary" align="center">
-        © 2025 Лабораторные работы по React
+    // Компонент Box из Material-UI - базовый контейнер
+    <Box 
+      className="footer" // CSS класс для дополнительного стилирования
+      // Динамический стиль фона в зависимости от темы
+      style={{ 
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2' 
+        // Темный режим: темно-серый (#1e1e1e)
+        // Светлый режим: синий Material-UI primary color (#1976d2)
+      }}
+    >
+      {/* Компонент Typography для текста */}
+      <Typography 
+        variant="body2" // Вариант текста - мелкий (body2)
+        color="textSecondary" // Цвет текста (переопределяется ниже)
+        align="center" // Выравнивание по центру
+        // Динамический цвет текста (в данном случае всегда белый)
+        style={{ 
+          color: isDarkMode ? '#ffffff' : '#ffffff' 
+          // Заметка: здесь цвет всегда белый, независимо от темы
+        }}
+      >
+        © 2025 Лабораторные работы по React // Текст копирайта
       </Typography>
     </Box>
   );

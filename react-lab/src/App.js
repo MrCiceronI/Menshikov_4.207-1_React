@@ -1,73 +1,59 @@
-// Импорт необходимых библиотек и компонентов
-import React, { useState } from 'react'; // React и хук состояния
+// src/App.js
+import React, { useState } from 'react'; // Импорт React и хука состояния
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Импорт компонентов маршрутизации
+import { Provider } from 'react-redux'; // Провайдер Redux хранилища
 import './App.css'; // Основные стили приложения
-import Header from './components/Header/Header'; // Компонент шапки
-import Menu from './components/Menu/Menu'; // Компонент бокового меню
-import Content from './components/Content/Content'; // Основное содержимое
-import Footer from './components/Footer/Footer'; // Компонент подвала
 
-// Главный компонент приложения
+// Импорт компонентов
+import Header from './components/Header/Header';
+import Menu from './components/Menu/Menu';
+import Content from './components/Content/Content';
+import Footer from './components/Footer/Footer';
+
+// Импорт провайдеров контекста и хранилища
+import { ThemeProvider } from './context/ThemeContext';
+import { store } from './store/store';
+
 function App() {
-  /*
-    Состояния компонента:
-    - isMenuOpen: boolean - открыто ли боковое меню (по умолчанию false)
-    - selectedLab: number|null - ID выбранной лабораторной работы (null - главная)
-  */
+  // Состояние для управления видимостью бокового меню
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedLab, setSelectedLab] = useState(null);
 
-  // Функция для переключения состояния меню
+  // Функция переключения состояния меню
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // Обработчик выбора лабораторной работы
-  const handleLabSelect = (labId) => {
-    setSelectedLab(labId); // Устанавливаем выбранную лабораторную
-    setIsMenuOpen(false); // Закрываем меню после выбора
-  };
-
-  // Рендер главного компонента
   return (
-    /*
-      Основной контейнер приложения с классом 'app'
-      Включает все основные компоненты:
-      - Header (шапка)
-      - Menu (боковое меню)
-      - Content (основное содержимое)
-      - Footer (подвал)
-    */
-    <div className="app">
-      {/*
-        Компонент Header (шапка)
-        Пропсы:
-        - onMenuToggle: функция для переключения меню (принимает toggleMenu)
-      */}
-      <Header onMenuToggle={toggleMenu} />
-
-      {/*
-        Компонент Menu (боковое меню)
-        Пропсы:
-        - isOpen: состояние меню (открыто/закрыто)
-        - onClose: функция для закрытия меню
-        - onLabSelect: обработчик выбора лабораторной работы
-      */}
-      <Menu 
-        isOpen={isMenuOpen} 
-        onClose={() => setIsMenuOpen(false)}
-        onLabSelect={handleLabSelect}
-      />
-
-      {/*
-        Компонент Content (основное содержимое)
-        Пропс:
-        - labId: ID выбранной лабораторной работы (null для главной)
-      */}
-      <Content labId={selectedLab} />
-
-      {/* Компонент Footer (подвал) без пропсов */}
-      <Footer />
-    </div>
+    // Провайдер Redux хранилища (делает store доступным во всем приложении)
+    <Provider store={store}>
+      {/* Провайдер темы (темный/светлый режим) */}
+      <ThemeProvider>
+        {/* Компонент маршрутизации (React Router) */}
+        <Router>
+          {/* Основной контейнер приложения */}
+          <div className="app">
+            {/* Шапка приложения с кнопкой меню */}
+            <Header onMenuToggle={toggleMenu} />
+            
+            {/* Боковое меню */}
+            <Menu 
+              isOpen={isMenuOpen} // Передаем состояние видимости
+              onClose={() => setIsMenuOpen(false)} // Функция закрытия
+            />
+            
+            {/* Конфигурация маршрутов */}
+            <Routes>
+              {/* Главная страница */}
+              <Route path="/" element={<Content />} />
+              {/* Страницы лабораторных работ (динамический параметр :id) */}
+              <Route path="/lab/:id" element={<Content />} />
+            </Routes>
+            
+            {/* Подвал приложения */}
+            <Footer />
+          </div>
+        </Router>
+      </ThemeProvider>
+    </Provider>
   );
 }
 
-// Экспортируем компонент для использования как корневой
 export default App;

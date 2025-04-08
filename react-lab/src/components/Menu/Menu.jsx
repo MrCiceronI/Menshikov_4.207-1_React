@@ -1,69 +1,73 @@
-// Импорт необходимых библиотек и компонентов
-import React from 'react'; // Основная библиотека React
-import './Menu.css'; // Файл стилей для этого компонента
+// src/components/Menu/Menu.jsx
+import React from 'react';
+import './Menu.css'; // Стили компонента меню
 import { 
-  Drawer, // Компонент выдвижной панели (бокового меню)
+  Drawer, // Компонент выдвижной панели
   List, // Контейнер для списка элементов
   ListItem, // Элемент списка
-  ListItemIcon, // Контейнер для иконки элемента списка
-  ListItemText // Текстовое содержимое элемента списка
-} from '@mui/material'; // Компоненты Material-UI
-import { Home, Code } from '@mui/icons-material'; // Иконки из коллекции Material-UI
+  ListItemIcon, // Контейнер для иконки элемента
+  ListItemText // Текст элемента
+} from '@mui/material'; // Импорт компонентов Material-UI
+import { Home, Code } from '@mui/icons-material'; // Импорт иконок
+import { Link } from 'react-router-dom'; // Компонент для навигации
+import { useTheme } from '../../context/ThemeContext'; // Контекст темы
 
-// Компонент Menu (боковое меню)
-const Menu = ({ isOpen, onClose, onLabSelect }) => {
-  /*
-    Пропсы:
-    - isOpen: boolean - определяет, открыто ли меню
-    - onClose: function - вызывается при закрытии меню
-    - onLabSelect: function(id) - вызывается при выборе лабораторной работы
-  */
+// Компонент бокового меню
+const Menu = ({ isOpen, onClose }) => { // Принимает пропсы:
+                                        // isOpen - состояние меню (открыто/закрыто)
+                                        // onClose - функция закрытия меню
+  const { isDarkMode } = useTheme(); // Получаем текущую тему
 
   // Массив лабораторных работ
   const labs = [
     { id: 1, title: "Лабораторная 1", icon: <Code /> },
     { id: 2, title: "Лабораторная 2", icon: <Code /> },
-    { id: 3, title: "Лабораторная 3", icon: <Code /> },
-    { id: 4, title: "Лабораторная 4", icon: <Code /> },
-    { id: 5, title: "Лабораторная 5", icon: <Code /> },
-    { id: 6, title: "Лабораторная 6", icon: <Code /> },
-    { id: 7, title: "Лабораторная 7", icon: <Code /> },
-    { id: 8, title: "Лабораторная 8", icon: <Code /> },
-    { id: 9, title: "Лабораторная 9", icon: <Code /> },
+    // ... остальные лабораторные
+    { id: 9, title: "Лабораторная 9", icon: <Code /> }
   ];
 
   return (
-    /*
-      Drawer - компонент выдвижной панели
-      Свойства:
-      - open: управляет видимостью (получает значение из пропса isOpen)
-      - onClose: обработчик закрытия (вызывает пропс onClose)
-    */
-    <Drawer open={isOpen} onClose={onClose}>
+    // Drawer - выдвижная панель меню
+    <Drawer 
+      open={isOpen} // Управление видимостью (из пропсов)
+      onClose={onClose} // Обработчик закрытия (из пропсов)
+      PaperProps={{ // Стилизация внутренней части Drawer
+        style: {
+          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон по теме
+          color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста по теме
+        }
+      }}
+    >
       {/* List - контейнер для элементов меню */}
       <List>
-        {/*
-          Пункт меню "Главная страница"
-          - button: делает элемент кликабельным
-          - onClick: при клике вызывает onLabSelect(null) для возврата на главную
-        */}
-        <ListItem button onClick={() => onLabSelect(null)}>
-          <ListItemIcon><Home /></ListItemIcon> {/* Иконка дома */}
-          <ListItemText primary="Главная" /> {/* Текст пункта меню */}
+        {/* Пункт меню "Главная" */}
+        <ListItem 
+          button // Делаем элемент кликабельным
+          component={Link} // Используем как ссылку
+          to="/" // Ссылка на главную
+          onClick={onClose} // Закрываем меню при клике
+          style={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет текста
+        >
+          <ListItemIcon>
+            <Home style={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
+          </ListItemIcon>
+          <ListItemText primary="Главная" />
         </ListItem>
 
-        {/*
-          Динамическое создание пунктов меню для лабораторных работ
-          Используем map для преобразования массива labs в элементы ListItem
-        */}
+        {/* Динамическое создание пунктов меню для лабораторных */}
         {labs.map((lab) => (
           <ListItem 
-            button // Делаем элемент кликабельным
-            key={lab.id} // Уникальный ключ для React (обязательно при использовании map)
-            onClick={() => onLabSelect(lab.id)} // Обработчик выбора лабораторной
+            button
+            component={Link}
+            to={`/lab/${lab.id}`} // Ссылка на лабораторную
+            key={lab.id} // Уникальный ключ
+            onClick={onClose} // Закрытие меню при клике
+            style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
           >
-            <ListItemIcon>{lab.icon}</ListItemIcon> {/* Иконка лабораторной */}
-            <ListItemText primary={lab.title} /> {/* Название лабораторной */}
+            <ListItemIcon>
+              <Code style={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
+            </ListItemIcon>
+            <ListItemText primary={lab.title} />
           </ListItem>
         ))}
       </List>
@@ -71,5 +75,4 @@ const Menu = ({ isOpen, onClose, onLabSelect }) => {
   );
 };
 
-// Экспортируем компонент для использования в других частях приложения
 export default Menu;

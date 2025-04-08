@@ -4,7 +4,6 @@ import './Lab.css';
 const Lab8 = () => {
   return (
     <div className="lab-content">
-      <h3>Лабораторная работа 8</h3>
       <ul>
         <li>Внедрить в проект  таблицы react-table.</li>
         <li>Добавить роли пользователей admin, user</li>

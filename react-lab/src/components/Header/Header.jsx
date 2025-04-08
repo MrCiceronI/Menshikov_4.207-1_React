@@ -1,59 +1,69 @@
-// Импорт необходимых библиотек и компонентов
-import React from 'react'; // Основная библиотека React
-import './Header.css'; // Файл стилей для этого компонента
+// src/components/Header/Header.jsx
+// Импорт необходимых библиотек и модулей
+import React from 'react'; // Базовый импорт React
+import './Header.css'; // Стили компонента Header
+// Импорт компонентов Material-UI
 import { 
-  AppBar, // Компонент верхней панели (шапки)
-  Toolbar, // Контейнер для элементов внутри AppBar
+  AppBar, // Компонент верхней панели приложения
+  Toolbar, // Контейнер для элементов панели
   Typography, // Компонент для текста
   IconButton // Кнопка с иконкой
-} from '@mui/material'; // Компоненты Material-UI
-import MenuIcon from '@mui/icons-material/Menu'; // Иконка меню из коллекции Material-UI
+} from '@mui/material';
+// Импорт иконок из Material-UI
+import MenuIcon from '@mui/icons-material/Menu'; // Иконка меню (гамбургер)
+import Brightness4Icon from '@mui/icons-material/Brightness4'; // Иконка "темная тема"
+import Brightness7Icon from '@mui/icons-material/Brightness7'; // Иконка "светлая тема"
+import { useTheme } from '../../context/ThemeContext'; // Контекст темы
 
-// Компонент Header (шапка сайта)
-const Header = ({ onMenuToggle }) => {
-  /*
-    Пропсы:
-    - onMenuToggle: функция, вызываемая при клике на иконку меню
-  */
+// Компонент Header - шапка приложения
+const Header = ({ onMenuToggle }) => { // Принимает пропс onMenuToggle для управления меню
+  // Получаем текущую тему и функцию для её переключения из контекста
+  const { isDarkMode, toggleTheme } = useTheme();
 
+  // Возвращаем JSX для рендеринга
   return (
-    /*
-      AppBar - компонент верхней панели (Material-UI)
-      Свойства:
-      - position="static": фиксированное позиционирование (можно также использовать "fixed" или "sticky")
-      - className="header": применение пользовательских стилей из Header.css
-    */
-    <AppBar position="static" className="header">
-      {/* Toolbar - контейнер для содержимого AppBar */}
+    // AppBar - верхняя навигационная панель
+    <AppBar 
+      position="static" // Фиксированное позиционирование
+      className="header" // CSS класс для дополнительного стилирования
+      // Динамический цвет фона в зависимости от темы
+      style={{ 
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2' 
+        // Темный режим: темно-серый (#1e1e1e)
+        // Светлый режим: синий Material-UI primary color (#1976d2)
+      }}
+    >
+      {/* Toolbar - контейнер для элементов панели */}
       <Toolbar>
-        {/*
-          IconButton - кнопка с иконкой меню
-          Свойства:
-          - edge="start": выравнивание к началу Toolbar
-          - color="inherit": наследует цвет от родителя
-          - aria-label="menu": доступное описание для screen readers
-          - onClick={onMenuToggle}: обработчик клика (передан из родительского компонента)
-        */}
+        {/* Кнопка меню (гамбургер) */}
         <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={onMenuToggle}
+          edge="start" // Выравнивание к началу панели
+          color="inherit" // Наследует цвет от родителя
+          aria-label="menu" // Доступное описание для screen readers
+          onClick={onMenuToggle} // Обработчик клика из пропсов
         >
-          {/* Иконка меню (гамбургер) */}
-          <MenuIcon />
+          <MenuIcon /> {/* Иконка меню */}
         </IconButton>
 
-        {/*
-          Typography - компонент для заголовка
-          Свойства:
-          - variant="h6": стиль заголовка 6-го уровня
-          - component="div": рендерится как div-элемент
-          - sx={{ flexGrow: 1 }}: растягивается на все доступное пространство (Material-UI system)
-        */}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        {/* Заголовок приложения */}
+        <Typography 
+          variant="h6" // Вариант текста - заголовок 6 уровня
+          component="div" // Рендерится как div
+          sx={{ flexGrow: 1 }} // Занимает все доступное пространство
+        >
           Лабораторные работы по React
         </Typography>
+
+        {/* Кнопка переключения темы */}
+        <IconButton 
+          color="inherit" // Наследует цвет от родителя
+          onClick={toggleTheme} // Обработчик переключения темы
+        >
+          {/* Условный рендеринг иконки в зависимости от темы */}
+          {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+          {/* Темный режим: иконка солнца (светлая тема) */}
+          {/* Светлый режим: иконка луны (темная тема) */}
+        </IconButton>
       </Toolbar>
     </AppBar>
   );

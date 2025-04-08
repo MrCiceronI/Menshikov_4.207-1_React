@@ -4,7 +4,6 @@ import './Lab.css';
 const Lab9 = () => {
   return (
     <div className="lab-content">
-      <h3>Лабораторная работа 9</h3>
       <ul>
         <li>Написать тест для компонента кнопки</li>
         <li>Провести рефакторинг страницы со списком данных с сервера. Переписать запрос к backend через rtk-query(useGetPostsQuery).</li>

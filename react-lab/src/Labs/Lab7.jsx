@@ -4,7 +4,6 @@ import './Lab.css';
 const Lab7 = () => {
   return (
     <div className="lab-content">
-      <h3>Лабораторная работа 7</h3>
       <ul>
         <li>Внедрить в проект UI Kit Mui/Bootstrap или им подобное, для возможности адаптива.</li>
         <li>Реализовать Header (Главная, О себе) - отдельные страницы.</li>

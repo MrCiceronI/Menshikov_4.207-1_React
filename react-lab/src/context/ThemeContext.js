@@ -1,5 +1,6 @@
 // src/contexts/ThemeContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
+//import { useEffect } from 'react';
 
 // 1. Создаем контекст для темы
 const ThemeContext = createContext();
@@ -21,24 +22,24 @@ export const ThemeProvider = ({ children }) => {
   };
 
   // 5. Эффект для применения изменений темы
-  useEffect(() => {
+  //useEffect(() => {
     // Получаем корневой элемент HTML
-    const root = document.documentElement;
-    
-    if (isDarkMode) {
-      // Добавляем класс для темной темы
-      root.classList.add('dark');
-      root.classList.remove('light');
-      // Сохраняем выбор в localStorage
-      localStorage.setItem('theme', 'dark');
-    } else {
-      // Добавляем класс для светлой темы
-      root.classList.add('light');
-      root.classList.remove('dark');
-      // Сохраняем выбор в localStorage
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]); // Зависимость - при изменении isDarkMode
+  const root = document.documentElement;
+  
+  if (isDarkMode) {
+    // Добавляем класс для темной темы
+    root.classList.add('dark');
+    root.classList.remove('light');
+    // Сохраняем выбор в localStorage
+    localStorage.setItem('theme', 'dark');
+  } else {
+    // Добавляем класс для светлой темы
+    root.classList.add('light');
+    root.classList.remove('dark');
+    // Сохраняем выбор в localStorage
+    localStorage.setItem('theme', 'light');
+  }
+  //}, [isDarkMode]); // Зависимость - при изменении isDarkMode
 
   // 6. Возвращаем провайдер контекста
   return (

@@ -1,9 +1,10 @@
 // src/components/Content/Content.jsx
 // Импорт необходимых библиотек и модулей
-import React, { useEffect } from 'react'; // Базовые хуки React
+import React, { useEffect, useState } from 'react'; // Базовые хуки React
 import { useParams } from 'react-router-dom'; // Хук для получения параметров URL
-import { useSelector, useDispatch } from 'react-redux'; // Redux хуки для работы с состоянием
-import { increment, decrement } from '../../store/counterSlice'; // Redux actions
+//import { useSelector, useDispatch } from 'react-redux'; // Redux хуки для работы с состоянием
+//import { increment, decrement } from '../../store/counterSlice'; // Redux actions
+
 import './Content.css'; // Стили компонента
 import { Paper, Typography, Button } from '@mui/material'; // Компоненты Material-UI
 import { useTheme } from '../../context/ThemeContext'; // Контекст темы (темный/светлый режим)
@@ -29,9 +30,13 @@ const Content = () => {
   const { isDarkMode } = useTheme();
   
   // Получаем текущее значение счетчика из Redux store
-  const count = useSelector((state) => state.counter.value);
+  //const count = useSelector((state) => state.counter.value);
   // Получаем функцию dispatch для отправки actions в Redux store
-  const dispatch = useDispatch();
+  //const dispatch = useDispatch();
+  const [countUseState, setCount] = useState(0);
+  /*const incrementUseState = () => {
+    
+  }*/
 
   // Эффект, который срабатывает при изменении labId
   useEffect(() => {
@@ -80,22 +85,39 @@ const Content = () => {
       {/* Пример использования Redux - блок с счетчиком */}
       <div style={{ marginTop: '20px' }}>
         {/* Отображаем текущее значение счетчика */}
-        <Typography variant="h6">Redux счётчик: {count}</Typography>
+        <Typography variant="h6">Счетчик: {countUseState}</Typography>
         {/* Кнопка для увеличения счетчика */}
-        <Button 
+        {/*<Button 
           variant="contained" 
           onClick={() => dispatch(increment())} // Отправляем action increment
           style={{ marginRight: '10px' }}
         >
           Увеличить (Redux)
-        </Button>
+        </Button>*/}
         {/* Кнопка для уменьшения счетчика */}
-        <Button 
+        {/*<Button 
           variant="contained" 
           onClick={() => dispatch(decrement())} // Отправляем action decrement
         >
           Уменьшить (Redux)
+        </Button> */}
+        
+        <Button 
+          variant="contained" 
+          onClick={() => {setCount(countUseState => countUseState + 1)
+            setCount(countUseState => countUseState + 1)}}
+          style={{ marginRight: '10px' }}
+        >
+          Увеличить
         </Button>
+        {/* Кнопка для уменьшения счетчика */}
+        <Button 
+          variant="contained" 
+          onClick={() => setCount(countUseState - 1)}
+        >
+          Уменьшить
+        </Button>
+
       </div>
     </Paper>
   );

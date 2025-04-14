@@ -1,66 +1,70 @@
 // src/App.js
 // Основные импорты React и сторонних библиотек
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Навигация
-import { Provider } from 'react-redux'; // Redux Provider
-import { ThemeProvider } from './context/ThemeContext'; // Провайдер темы
-import { store } from './store/store'; // Redux store
-import { useLoginState } from './hooks/useLoginState'; // Кастомный хук авторизации
-import './App.css'; // Глобальные стили
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Клиентская маршрутизация
+import { Provider } from 'react-redux'; // Обертка для предоставления Redux store
+import { ThemeProvider } from './context/ThemeContext'; // Провайдер темы (dark/light)
+import { store } from './store/store'; // Корневой Redux store приложения
+import { useLoginState } from './hooks/useLoginState'; // Кастомный хук для проверки авторизации
+import './App.css'; // Глобальные CSS-стили
 
 // Импорт компонентов
-import Header from './components/Header/Header';
-import Menu from './components/Menu/Menu';
-import Content from './components/Content/Content';
-import Footer from './components/Footer/Footer';
-import AuthPage from './pages/AuthPage';
-import FeedbackPage from './pages/FeedbackPage';
+import Header from './components/Header/Header'; // Шапка приложения
+import Menu from './components/Menu/Menu'; // Боковое меню
+import Content from './components/Content/Content'; // Основной контент
+import Footer from './components/Footer/Footer'; // Подвал
+import AuthPage from './pages/AuthPage'; // Страница авторизации
+import FeedbackPage from './pages/FeedbackPage'; // Страница отзывов
+import ProfilePage from './pages/ProfilePage'; // Страница профиля
 
 /**
- * Основной компонент контента приложения
+ * Компонент AppContent - ядро приложения
  * Управляет:
- * - Состоянием бокового меню
- * - Проверкой авторизации
- * - Маршрутизацией
+ * - Состоянием бокового меню (открыто/закрыто)
+ * - Проверкой авторизации пользователя
+ * - Маршрутизацией между страницами
  */
 const AppContent = () => {
-  // Состояние открытия/закрытия бокового меню
+  // Состояние для управления видимостью бокового меню
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Проверка статуса авторизации через кастомный хук
   const isLoggedIn = useLoginState();
 
-  // Функция переключения состояния меню
+  // Переключатель состояния меню
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // Если пользователь не авторизован, показываем страницу авторизации
+  // Если пользователь не авторизован, показываем страницу входа
   if (!isLoggedIn) {
     return <AuthPage />;
   }
 
-  // Основная разметка для авторизованного пользователя
+  // Основной layout для авторизованных пользователей
   return (
-    <Router>
+    <Router> {/* Обеспечивает клиентскую маршрутизацию */}
       <div className="app">
-        {/* Шапка приложения с кнопкой меню */}
+        {/* Шапка приложения с кнопкой бургер-меню */}
         <Header onMenuToggle={toggleMenu} />
         
-        {/* Боковое меню */}
+        {/* Боковое навигационное меню */}
         <Menu 
           isOpen={isMenuOpen} 
           onClose={() => setIsMenuOpen(false)} 
         />
         
-        {/* Конфигурация маршрутов */}
+        {/* Конфигурация маршрутов приложения */}
         <Routes>
           {/* Главная страница */}
           <Route path="/" element={<Content />} />
           
-          {/* Страница лабораторной работы (динамический параметр :id) */}
+          {/* Динамический маршрут для лабораторных работ */}
           <Route path="/lab/:id" element={<Content />} />
           
           {/* Страница обратной связи */}
           <Route path="/feedback" element={<FeedbackPage />} />
+          
+          {/* Страница профиля пользователя */}
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
         
         {/* Подвал приложения */}
@@ -71,18 +75,19 @@ const AppContent = () => {
 };
 
 /**
- * Корневой компонент приложения
+ * Корневой компонент App
  * Обеспечивает:
- * - Redux хранилище
- * - Контекст темы
+ * - Доступ к Redux store во всем приложении
+ * - Поддержку темы (темный/светлый режим)
+ * - Инициализацию основного контента
  */
 function App() {
   return (
-    // Провайдер Redux хранилища (делает store доступным во всем приложении)
+    // Предоставляет Redux store дочерним компонентам
     <Provider store={store}>
-      {/* Провайдер темы (темный/светлый режим) */}
+      {/* Обеспечивает доступ к теме во всем приложении */}
       <ThemeProvider>
-        {/* Основной контент приложения */}
+        {/* Основной компонент с логикой приложения */}
         <AppContent />
       </ThemeProvider>
     </Provider>

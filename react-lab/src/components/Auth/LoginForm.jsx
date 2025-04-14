@@ -1,51 +1,59 @@
 // src/components/Auth/LoginForm.jsx
 // Импорт необходимых библиотек и компонентов
-// React и useCallback для мемоизации функций
-import React, { useCallback } from 'react';
-// Хук useForm из react-hook-form для управления формой
-import { useForm } from 'react-hook-form';
-// Хук useDispatch из react-redux для отправки действий в Redux store
-import { useDispatch } from 'react-redux';
-// Действие login из authSlice для авторизации пользователя
-import { login } from '../../store/authSlice';
+// React - базовая библиотека для создания компонентов
+// useForm - хук из react-hook-form для управления формой
+// useDispatch и useSelector - хуки Redux для взаимодействия с хранилищем
+// loginUser - экшен для авторизации пользователя
 // Компоненты Material-UI для оформления интерфейса
-import { TextField, Button, Box, Typography } from '@mui/material';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../../store/authSlice';
+import { TextField, Button, Box, Typography, Alert } from '@mui/material';
 
 // Компонент формы авторизации
 const LoginForm = () => {
-  // Инициализация хука useForm:
-  // register - для регистрации полей формы
+  // Инициализация хука useForm для управления формой:
+  // register - функция для регистрации полей формы
   // handleSubmit - обработчик отправки формы
   // errors - объект с ошибками валидации
   const { register, handleSubmit, formState: { errors } } = useForm();
   
-  // Получение функции dispatch из Redux store
+  // Хук useDispatch для отправки экшенов в Redux хранилище
   const dispatch = useDispatch();
+  
+  // Хук useSelector для доступа к состоянию auth из Redux хранилища
+  // loading - флаг процесса загрузки
+  // error - сообщение об ошибке (если есть)
+  const { loading, error } = useSelector(state => state.auth);
 
-  // Обработчик отправки формы, мемоизированный с помощью useCallback
-  // для оптимизации производительности
-  const onSubmit = useCallback((data) => {
-    // Диспатч действия login с email пользователя
-    dispatch(login({ email: data.email }));
-  }, [dispatch]); // Зависимость от dispatch
+  // Функция-обработчик отправки формы
+  // data - объект с данными формы (email и password)
+  const onSubmit = (data) => {
+    // Диспатчим экшен loginUser с данными формы
+    dispatch(loginUser(data));
+  };
 
-  // Рендер формы
+  // Рендер компонента
   return (
-    // Box - контейнер из Material-UI, здесь используется как form
+    // Box - контейнер из Material-UI, здесь используется как форма
     // onSubmit - обработчик отправки формы, обернутый в handleSubmit
     // sx - стили Material-UI (margin-top: 3)
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3 }}>
       {/* Заголовок формы */}
       <Typography variant="h5" gutterBottom>Авторизация</Typography>
       
+      {/* Блок для отображения ошибок из Redux (например, ошибка сервера) */}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       {/* Поле ввода email */}
       <TextField
         label="Email"
-        fullWidth // Растягивается на всю ширину
-        margin="normal" // Обычные отступы
+        fullWidth  // растягивается на всю ширину
+        margin="normal"  // нормальные отступы
         // Регистрация поля в форме с валидацией:
-        // - required: обязательное поле
-        // - pattern: проверка на соответствие regex email
+        // required - обязательное поле
+        // pattern - регулярное выражение для проверки email
         {...register('email', { 
           required: 'Email обязателен',
           pattern: {
@@ -53,19 +61,19 @@ const LoginForm = () => {
             message: 'Некорректный email'
           }
         })}
-        error={!!errors.email} // Показывать ошибку, если есть
-        helperText={errors.email?.message} // Текст ошибки
+        error={!!errors.email}  // показывать ошибку, если есть
+        helperText={errors.email?.message}  // текст ошибки
       />
       
       {/* Поле ввода пароля */}
       <TextField
         label="Пароль"
-        type="password" // Скрытый ввод пароля
+        type="password"  // тип поля - пароль (скрытие символов)
         fullWidth
         margin="normal"
         // Регистрация поля с валидацией:
-        // - required: обязательное поле
-        // - minLength: минимальная длина 6 символов
+        // required - обязательное поле
+        // minLength - минимальная длина пароля
         {...register('password', { 
           required: 'Пароль обязателен',
           minLength: {
@@ -79,15 +87,17 @@ const LoginForm = () => {
       
       {/* Кнопка отправки формы */}
       <Button 
-        type="submit" // Тип кнопки - submit
-        variant="contained" // Стиль Material-UI
-        sx={{ mt: 2 }} // Стиль - margin-top: 2
+        type="submit"
+        variant="contained"  // стиль кнопки
+        disabled={loading}  // отключаем кнопку во время загрузки
+        sx={{ mt: 2 }}  // стиль (margin-top: 2)
       >
-        Войти
+        {/* Меняем текст кнопки в зависимости от состояния загрузки */}
+        {loading ? 'Загрузка...' : 'Войти'}
       </Button>
     </Box>
   );
 };
 
-// Экспорт компонента по умолчанию
+// Экспорт компонента для использования в других частях приложения
 export default LoginForm;

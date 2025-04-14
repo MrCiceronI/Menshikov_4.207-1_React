@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "9c16",
+      "name": "Сергей",
+      "email": "mr.menshikov.s@gmail.com",
+      "password": "111111",
+      "confirmPassword": "111111"
+    }
+  ],
+  "feedbacks": []
+}

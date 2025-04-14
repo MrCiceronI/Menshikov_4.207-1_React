@@ -1,42 +1,50 @@
 // src/components/Auth/RegisterForm.jsx
 // Импорт необходимых библиотек и компонентов
-import React, { useCallback } from 'react'; // React и хук useCallback
-import { useForm } from 'react-hook-form'; // Хук для работы с формами
-import { TextField, Button, Box, Typography } from '@mui/material'; // UI компоненты Material-UI
+import React from 'react';
+import { useForm } from 'react-hook-form'; // Хук для управления формой
+import { useDispatch, useSelector } from 'react-redux'; // Хуки Redux
+import { registerUser } from '../../store/authSlice'; // Экшен для регистрации
+// Компоненты Material-UI для UI
+import { TextField, Button, Box, Typography, Alert } from '@mui/material';
 
-// Компонент формы регистрации
 const RegisterForm = () => {
-  // Использование хука useForm для управления формой:
-  // - register: для регистрации полей ввода
-  // - handleSubmit: обработчик отправки формы
-  // - errors: объект с ошибками валидации
-  // - watch: функция для отслеживания значений полей (используется для проверки совпадения паролей)
+  // Инициализация хука useForm:
+  // register - для регистрации полей формы
+  // handleSubmit - обработчик отправки формы
+  // errors - объект ошибок валидации
+  // watch - функция для отслеживания значений полей
   const { register, handleSubmit, formState: { errors }, watch } = useForm();
   
-  // Обработчик отправки формы, мемоизированный с помощью useCallback
-  const onSubmit = useCallback((data) => {
-    console.log('Регистрация:', data); // Логирование данных формы
-    // Здесь будет логика регистрации (например, запрос к API)
-  }, []); // Пустой массив зависимостей - функция создается один раз
+  // Хук useDispatch для отправки действий в Redux
+  const dispatch = useDispatch();
+  
+  // Получаем состояние загрузки и ошибки из Redux хранилища
+  const { loading, error } = useSelector(state => state.auth);
 
-  // Рендер формы регистрации
+  // Обработчик отправки формы
+  const onSubmit = (data) => {
+    // Диспатчим действие регистрации с данными формы
+    dispatch(registerUser(data));
+  };
+
+  // Рендер компонента
   return (
-    // Box - контейнер из Material-UI, используемый как form
-    // onSubmit - обработчик отправки, обернутый в handleSubmit
-    // sx - стили (margin-top: 3)
+    // Box как форма с обработчиком onSubmit
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3 }}>
       {/* Заголовок формы */}
       <Typography variant="h5" gutterBottom>Регистрация</Typography>
       
+      {/* Блок для отображения ошибок из Redux */}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       {/* Поле для ввода имени */}
       <TextField
         label="Имя"
-        fullWidth // Растягивается на всю ширину
-        margin="normal" // Стандартные отступы
-        // Регистрация поля с валидацией:
-        // required - обязательное поле
+        fullWidth
+        margin="normal"
+        // Регистрация поля с валидацией на обязательность
         {...register('name', { required: 'Имя обязательно' })}
-        error={!!errors.name} // Показывать ошибку, если есть
+        error={!!errors.name} // Показывать ошибку если есть
         helperText={errors.name?.message} // Текст ошибки
       />
       
@@ -46,8 +54,8 @@ const RegisterForm = () => {
         fullWidth
         margin="normal"
         // Регистрация поля с валидацией:
-        // required - обязательное поле
-        // pattern - проверка формата email через regex
+        // - обязательное поле
+        // - проверка формата email через regex
         {...register('email', { 
           required: 'Email обязателен',
           pattern: {
@@ -62,12 +70,12 @@ const RegisterForm = () => {
       {/* Поле для ввода пароля */}
       <TextField
         label="Пароль"
-        type="password" // Скрытый ввод
+        type="password" // Скрытие вводимых символов
         fullWidth
         margin="normal"
-        // Регистрация поля с валидацией:
-        // required - обязательное поле
-        // minLength - минимальная длина 6 символов
+        // Валидация:
+        // - обязательное поле
+        // - минимальная длина 6 символов
         {...register('password', { 
           required: 'Пароль обязателен',
           minLength: {
@@ -85,8 +93,7 @@ const RegisterForm = () => {
         type="password"
         fullWidth
         margin="normal"
-        // Кастомная валидация - проверка совпадения с полем password
-        // с использованием функции watch для отслеживания значения password
+        // Кастомная валидация - сравнение с полем password
         {...register('confirmPassword', {
           validate: value => 
             value === watch('password') || 'Пароли не совпадают'
@@ -97,15 +104,16 @@ const RegisterForm = () => {
       
       {/* Кнопка отправки формы */}
       <Button 
-        type="submit" // Тип кнопки - submit
-        variant="contained" // Стиль Material-UI
-        sx={{ mt: 2 }} // Стиль - margin-top: 2
+        type="submit" 
+        variant="contained" // Стиль кнопки
+        disabled={loading} // Блокировка при загрузке
+        sx={{ mt: 2 }} // Стиль - отступ сверху
       >
-        Зарегистрироваться
+        {/* Меняем текст при загрузке */}
+        {loading ? 'Загрузка...' : 'Зарегистрироваться'}
       </Button>
     </Box>
   );
 };
 
-// Экспорт компонента по умолчанию
 export default RegisterForm;

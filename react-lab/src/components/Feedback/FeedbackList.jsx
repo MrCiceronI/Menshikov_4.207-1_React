@@ -1,46 +1,92 @@
 // src/components/Feedback/FeedbackList.jsx
-// Импорт необходимых зависимостей
+// Импорт необходимых библиотек и компонентов
 import React from 'react';
-import { useSelector } from 'react-redux'; // Хук для доступа к Redux store
+import { useDispatch, useSelector } from 'react-redux'; // Redux хуки
+import { deleteFeedback } from '../../store/authSlice'; // Экшен для удаления отзыва
+// Компоненты Material-UI
 import { 
   List, 
   ListItem, 
   ListItemText, 
   Typography, 
-  Paper 
-} from '@mui/material'; // Компоненты Material-UI
+  Paper,
+  IconButton,
+  ListItemSecondaryAction,
+  Divider
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete'; // Иконка удаления
+import { useTheme } from '../../context/ThemeContext'; // Контекст темы
 
 const FeedbackList = () => {
-  // Получаем массив отзывов из Redux store
-  // Используем селектор для доступа к state.auth.feedbacks
-  const feedbacks = useSelector(state => state.auth.feedbacks);
+  const dispatch = useDispatch(); // Хук для отправки экшенов
+  // Получаем данные из Redux хранилища:
+  // feedbacks - список отзывов
+  // user - данные текущего пользователя
+  const { feedbacks, user } = useSelector(state => state.auth);
+
+  // Обработчик удаления отзыва
+  const handleDelete = (id) => {
+    dispatch(deleteFeedback(id)); // Отправляем экшен удаления
+  };
+
+  const { isDarkMode } = useTheme(); // Получаем текущую тему
 
   return (
-    // Компонент Paper создает карточку с тенями для визуального выделения
+    // Paper - контейнер с тенью
     <Paper sx={{ 
-      mt: 3, // margin-top: 24px (3 * 8px)
-      p: 2   // padding: 16px (2 * 8px)
+      mt: 3, // Отступ сверху
+      p: 2, // Внутренние отступы
+      backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон по теме
+      color: isDarkMode ? '#ffffff' : '#000000' // Цвет текста по теме
     }}>
-      {/* Заголовок секции */}
-      <Typography variant="h5" gutterBottom>Отзывы</Typography>
+      {/* Заголовок списка */}
+      <Typography 
+        variant="h5" 
+        gutterBottom // Отступ снизу
+        sx={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет по теме
+      >
+        Отзывы
+      </Typography>
       
-      {/* Условный рендеринг в зависимости от наличия отзывов */}
+      {/* Условный рендеринг: если отзывов нет */}
       {feedbacks.length === 0 ? (
-        // Если отзывов нет - выводим сообщение
         <Typography>Пока нет отзывов</Typography>
       ) : (
-        // Если отзывы есть - рендерим список
+        // Список отзывов
         <List>
-          {/* Маппим массив отзывов в компоненты ListItem */}
           {feedbacks.map((feedback, index) => (
-            // Каждый элемент списка должен иметь уникальный key
-            <ListItem key={index}>
-              <ListItemText
-                primary={feedback.message} // Основной текст - сообщение
-                secondary={`Автор: ${feedback.author}, Дата: ${feedback.date}`} 
-                // Вторичный текст - автор и дата
-              />
-            </ListItem>
+            <React.Fragment key={feedback.id || index}>
+              {/* Элемент списка с отзывом */}
+              <ListItem sx={{ 
+                backgroundColor: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Фон по теме
+                '&:hover': { // Эффект при наведении
+                  backgroundColor: isDarkMode ? '#3d3d3d' : '#eeeeee'
+                }
+              }}>
+                {/* Текст отзыва */}
+                <ListItemText
+                  primary={feedback.message} // Основной текст (сообщение)
+                  secondary={`Автор: ${feedback.author}, Дата: ${feedback.date}`} // Подпись
+                  primaryTypographyProps={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет текста
+                  secondaryTypographyProps={{ color: isDarkMode ? '#b0b0b0' : '#555555' }} // Цвет подписи
+                />
+                {/* Кнопка удаления (показывается только автору или админу) */}
+                {(user?.id === feedback.userId || user?.email === feedback.author) && (
+                  <ListItemSecondaryAction>
+                    <IconButton 
+                      edge="end" // Выравнивание по правому краю
+                      aria-label="delete" // Доступность
+                      onClick={() => handleDelete(feedback.id)} // Обработчик клика
+                      sx={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет иконки
+                    >
+                      <DeleteIcon /> {/* Иконка корзины */}
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                )}
+              </ListItem>
+              {/* Разделитель между элементами (кроме последнего) */}
+              {index < feedbacks.length - 1 && <Divider />}
+            </React.Fragment>
           ))}
         </List>
       )}

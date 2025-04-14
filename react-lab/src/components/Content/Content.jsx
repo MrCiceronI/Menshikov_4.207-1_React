@@ -61,12 +61,12 @@ const Content = () => {
   return (
     // Компонент Paper из Material-UI - создает "бумажный" эффект с тенью
     <Paper 
-      elevation={3} // Уровень тени
-      className="content" // CSS класс
-      // Динамические стили в зависимости от темы
-      style={{ 
-        backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Темный/светлый фон
-        color: isDarkMode ? '#ffffff' : '#000000' // Темный/светлый текст
+      elevation={3}
+      sx={{ 
+        p: { xs: 2, sm: 3, md: 4 },
+        m: { xs: 1, sm: 2, md: 3 },
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+        color: isDarkMode ? '#ffffff' : '#000000'
       }}
     >
       {/* Заголовок - показывает номер лабораторной работы или "Главная страница" */}

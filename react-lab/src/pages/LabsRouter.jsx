@@ -1,6 +1,6 @@
 // src/pages/LabsRouter.jsx
 // Импорт необходимых компонентов из react-router-dom
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Импорт компонентов лабораторных работ
 import Lab1 from '../Labs/Lab1';
@@ -23,6 +23,7 @@ const LabsRouter = () => {
         - path: путь в URL
         - element: компонент для отображения
       */}
+      <Route path="/" element={<Navigate to="/labs/lab1" replace />} />
       <Route path="lab1" element={<Lab1 />} />
       <Route path="lab2" element={<Lab2 />} />
       <Route path="lab3" element={<Lab3 />} />

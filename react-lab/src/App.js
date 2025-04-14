@@ -16,6 +16,7 @@ import Footer from './components/Footer/Footer'; // Подвал
 import AuthPage from './pages/AuthPage'; // Страница авторизации
 import FeedbackPage from './pages/FeedbackPage'; // Страница отзывов
 import ProfilePage from './pages/ProfilePage'; // Страница профиля
+import AboutPage from './pages/AboutPage';
 
 /**
  * Компонент AppContent - ядро приложения
@@ -65,6 +66,9 @@ const AppContent = () => {
           
           {/* Страница профиля пользователя */}
           <Route path="/profile" element={<ProfilePage />} />
+
+          {/* Страница "О себе" */}
+          <Route path="/about" element={<AboutPage />} />
         </Routes>
         
         {/* Подвал приложения */}

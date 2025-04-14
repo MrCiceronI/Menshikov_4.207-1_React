@@ -1,21 +1,24 @@
 // src/hooks/useLoginState.js
-// Импорт хука useSelector из библиотеки react-redux
-// useSelector позволяет извлекать данные из Redux-хранилища
+
+// Импортируем хук useSelector из react-redux для доступа к состоянию Redux
 import { useSelector } from 'react-redux';
 
 /**
- * Кастомный хук для получения состояния авторизации пользователя
- * 
- * Этот хук предоставляет простой способ проверки, авторизован ли пользователь,
- * без необходимости повторного написания селектора в разных компонентах
- * 
- * @returns {boolean} Возвращает true если пользователь авторизован, false если нет
+ * Кастомный хук для проверки состояния авторизации пользователя
+ * @returns {boolean} Возвращает true, если пользователь авторизован
  */
 export const useLoginState = () => {
-  // Использование useSelector для получения значения isLoggedIn из Redux-хранилища
-  // Селектор получает состояние auth и возвращает поле isLoggedIn
-  const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
+  // 1. Получаем состояние авторизации из Redux хранилища
+  //    - Обращаемся к state.auth.isLoggedIn
+  //    - Это "официальное" состояние, управляемое authSlice
+  const isLoggedInRedux = useSelector(state => state.auth.isLoggedIn);
   
-  // Возвращение значения авторизации
-  return isLoggedIn;
+  // 2. Дополнительно проверяем наличие данных в localStorage
+  //    - !! преобразует значение в boolean (true если есть данные)
+  //    - Это резервная проверка на случай, если Redux состояние сбросилось
+  const isLoggedInLocal = !!localStorage.getItem('auth');
+  
+  // 3. Возвращаем true если пользователь авторизован по ЛЮБОМУ из критериев
+  //    - Используем OR (||) так как достаточно одного признака авторизации
+  return isLoggedInRedux || isLoggedInLocal;
 };

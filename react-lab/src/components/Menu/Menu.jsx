@@ -108,7 +108,9 @@ const Menu = ({ isOpen, onClose }) => {
             onClick={onClose}
             style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
           >
-            <ListItemIcon>
+            <ListItemIcon
+              style={{ color: isDarkMode ? '#ffffff' : '#000000' }}
+            >
               {lab.icon}
             </ListItemIcon>
             <ListItemText primary={lab.title} />

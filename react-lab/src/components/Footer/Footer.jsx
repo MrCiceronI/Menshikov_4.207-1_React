@@ -1,44 +1,103 @@
 // src/components/Footer/Footer.jsx
-// Импорт необходимых библиотек и модулей
-import React from 'react'; // Базовый импорт React
-import './Footer.css'; // Стили компонента Footer
-import { Box, Typography } from '@mui/material'; // Компоненты Material-UI
-import { useTheme } from '../../context/ThemeContext'; // Контекст темы (темный/светлый режим)
+// Импорт необходимых библиотек и компонентов
+import React from 'react';
+// Компоненты Material-UI для создания интерфейса
+import { 
+  Box, // Блочный контейнер для компоновки
+  Typography, // Текст с заданными стилями
+  IconButton, // Кнопка с иконкой
+  Tooltip, // Всплывающая подсказка
+  useMediaQuery, // Хук для медиазапросов
+  useTheme // Хук для доступа к теме MUI
+} from '@mui/material';
+// Кастомный контекст темы (переименован во избежание конфликта имен)
+import { useTheme as useCustomTheme } from '../../context/ThemeContext';
+// Иконки из Material-UI
+import FeedbackIcon from '@mui/icons-material/Feedback'; // Иконка обратной связи
+import GitHubIcon from '@mui/icons-material/GitHub'; // Иконка GitHub
+// Redux хуки для работы с состоянием
+import { useSelector } from 'react-redux';
+// Хук для навигации
+import { useNavigate } from 'react-router-dom';
 
-// Компонент Footer - подвал сайта
+// Компонент подвала сайта
 const Footer = () => {
-  // Получаем текущую тему (темный/светлый режим) из контекста
-  const { isDarkMode } = useTheme();
+  // Получаем информацию о текущей теме из кастомного контекста
+  const { isDarkMode } = useCustomTheme();
+  // Получаем тему Material-UI
+  const theme = useTheme();
+  // Определяем, является ли устройство мобильным (ширина меньше 'sm')
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // Проверяем, авторизован ли пользователь через Redux
+  const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
+  // Хук для программной навигации
+  const navigate = useNavigate();
 
-  // Возвращаем JSX для рендеринга
+  // Обработчик клика по кнопке обратной связи
+  const handleFeedbackClick = () => {
+    // Логика открытия формы обратной связи
+    if (isLoggedIn) {
+      navigate('/feedback'); // Перенаправляем на страницу feedback если пользователь авторизован
+    }
+    // Можно добавить else с обработкой случая неавторизованного пользователя
+  };
+
+  // Обработчик клика по кнопке GitHub
+  const handleGitHubClick = () => {
+    // Открываем репозиторий проекта в новой вкладке
+    window.open('https://github.com/MrCiceronI/Menshikov_4.207-1_React', '_blank');
+  };
+
   return (
-    // Компонент Box из Material-UI - базовый контейнер
+    // Основной контейнер подвала
     <Box 
-      className="footer" // CSS класс для дополнительного стилирования
-      // Динамический стиль фона в зависимости от темы
-      style={{ 
-        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2' 
-        // Темный режим: темно-серый (#1e1e1e)
-        // Светлый режим: синий Material-UI primary color (#1976d2)
+      sx={{ 
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2', // Фон зависит от темы
+        color: '#ffffff', // Белый цвет текста
+        py: 2, // Вертикальные отступы
+        px: isMobile ? 1 : 4 // Горизонтальные отступы зависят от устройства
       }}
     >
-      {/* Компонент Typography для текста */}
-      <Typography 
-        variant="body2" // Вариант текста - мелкий (body2)
-        color="textSecondary" // Цвет текста (переопределяется ниже)
-        align="center" // Выравнивание по центру
-        // Динамический цвет текста (в данном случае всегда белый)
-        style={{ 
-          color: isDarkMode ? '#ffffff' : '#ffffff' 
-          // Заметка: здесь цвет всегда белый, независимо от темы
+      {/* Внутренний контейнер с содержимым подвала */}
+      <Box 
+        sx={{ 
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row', // Направление flex зависит от устройства
+          justifyContent: 'space-between', // Распределение пространства между элементами
+          alignItems: 'center', // Выравнивание по центру
+          gap: isMobile ? 2 : 0 // Отступ между элементами
         }}
       >
         {/* Текст копирайта */}
-        © 2025 Лабораторные работы по React
-      </Typography>
+        <Typography variant="body2">
+          © 2025 Лабораторные работы по React
+        </Typography>
+
+        {/* Контейнер с кнопками действий */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Кнопка обратной связи с подсказкой */}
+          <Tooltip title="Обратная связь">
+            <IconButton 
+              color="inherit" // Наследует цвет от родителя
+              onClick={handleFeedbackClick}
+            >
+              <FeedbackIcon />
+            </IconButton>
+          </Tooltip>
+          
+          {/* Кнопка GitHub с подсказкой */}
+          <Tooltip title="GitHub репозиторий">
+            <IconButton 
+              color="inherit" // Наследует цвет от родителя
+              onClick={handleGitHubClick}
+            >
+              <GitHubIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
     </Box>
   );
 };
 
-// Экспортируем компонент для использования в других частях приложения
 export default Footer;

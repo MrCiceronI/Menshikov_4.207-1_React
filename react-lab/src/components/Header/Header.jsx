@@ -1,77 +1,104 @@
 // src/components/Header/Header.jsx
-// Импорт необходимых библиотек и модулей
-import React from 'react'; // Базовый импорт React
-import './Header.css'; // Стили компонента Header
-// Импорт компонентов Material-UI
+// Импорт необходимых библиотек и компонентов
+import React from 'react';
+// Компоненты Material-UI для создания интерфейса
 import { 
-  AppBar, // Компонент верхней панели приложения
-  Toolbar, // Контейнер для элементов панели
-  Typography, // Компонент для текста
-  IconButton // Кнопка с иконкой
+  AppBar, // Верхняя навигационная панель
+  Toolbar, // Контейнер для элементов внутри AppBar
+  Typography, // Текст с заданными стилями
+  IconButton, // Кнопка с иконкой
+  Box, // Блочный контейнер для компоновки
+  useMediaQuery, // Хук для медиазапросов
+  Button // Кнопка
 } from '@mui/material';
-// Импорт иконок из Material-UI
-import MenuIcon from '@mui/icons-material/Menu'; // Иконка меню (гамбургер)
-import Brightness4Icon from '@mui/icons-material/Brightness4'; // Иконка "темная тема"
-import Brightness7Icon from '@mui/icons-material/Brightness7'; // Иконка "светлая тема"
-import { useTheme } from '../../context/ThemeContext'; // Контекст темы
+// Иконки из Material-UI
+import MenuIcon from '@mui/icons-material/Menu'; // Иконка меню
+import Brightness4Icon from '@mui/icons-material/Brightness4'; // Иконка темной темы
+import Brightness7Icon from '@mui/icons-material/Brightness7'; // Иконка светлой темы
+// Кастомный контекст темы
+import { useTheme } from '../../context/ThemeContext';
+// Компонент профиля пользователя
 import UserProfile from '../User/UserProfile';
+// Redux хуки для работы с состоянием
 import { useSelector } from 'react-redux';
+// Компонент для навигации
+import { Link } from 'react-router-dom';
 
-// Компонент Header - шапка приложения
-const Header = ({ onMenuToggle }) => { // Принимает пропс onMenuToggle для управления меню
-  // Получаем текущую тему и функцию для её переключения из контекста
+// Компонент Header принимает пропс onMenuToggle для управления боковым меню
+const Header = ({ onMenuToggle }) => {
+  // Получаем данные о текущей теме и функцию для ее переключения
   const { isDarkMode, toggleTheme } = useTheme();
+  // Проверяем, авторизован ли пользователь через Redux
   const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
+  // Получаем объект темы для доступа к breakpoints
+  const { theme } = useTheme();
+  // Определяем, является ли устройство мобильным (ширина меньше 'sm')
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Возвращаем JSX для рендеринга
   return (
-    // AppBar - верхняя навигационная панель
+    // AppBar - верхняя панель с динамическим цветом фона в зависимости от темы
     <AppBar 
       position="static" // Фиксированное позиционирование
-      className="header" // CSS класс для дополнительного стилирования
-      // Динамический цвет фона в зависимости от темы
-      style={{ 
-        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2' 
-        // Темный режим: темно-серый (#1e1e1e)
-        // Светлый режим: синий Material-UI primary color (#1976d2)
+      className="header" // CSS класс
+      style={{
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2' // Цвет фона зависит от темы
       }}
     >
-      {/* Toolbar - контейнер для элементов панели */}
+      {/* Toolbar - контейнер для содержимого AppBar */}
       <Toolbar>
-        {/* Кнопка меню (гамбургер) */}
+        {/* Кнопка меню (отображается всегда) */}
         <IconButton
-          edge="start" // Выравнивание к началу панели
+          edge="start" // Выравнивание к началу
           color="inherit" // Наследует цвет от родителя
-          aria-label="menu" // Доступное описание для screen readers
-          onClick={onMenuToggle} // Обработчик клика из пропсов
+          aria-label="menu" // Доступное описание
+          onClick={onMenuToggle} // Обработчик клика (передан из родителя)
         >
           <MenuIcon /> {/* Иконка меню */}
         </IconButton>
 
-        {/* Заголовок приложения */}
+        {/* Заголовок/логотип приложения */}
         <Typography 
-          variant="h6" // Вариант текста - заголовок 6 уровня
-          component="div" // Рендерится как div
-          sx={{ flexGrow: 1 }} // Занимает все доступное пространство
+          variant={isMobile ? "h6" : "h5"} // Размер шрифта зависит от устройства
+          component={Link} // Рендерится как ссылка
+          to="/" // Ссылка на главную страницу
+          sx={{ 
+            flexGrow: 1, // Занимает все доступное пространство
+            textDecoration: 'none', // Убирает подчеркивание
+            color: 'inherit' // Наследует цвет текста
+          }}
         >
           Лабораторные работы по React
         </Typography>
 
+        {/* Блок с навигацией (отображается только на десктопе) */}
+        {!isMobile && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Кнопка "О себе" */}
+            <Button 
+              component={Link} // Рендерится как ссылка
+              to="/about" // Ссылка на страницу "О себе"
+              color="inherit" // Наследует цвет
+            >
+              О себе
+            </Button>
+          </Box>
+        )}
+
         {/* Кнопка переключения темы */}
         <IconButton 
-          color="inherit" // Наследует цвет от родителя
+          color="inherit" // Наследует цвет
           onClick={toggleTheme} // Обработчик переключения темы
+          sx={{ ml: 2 }} // Отступ слева
         >
-          {/* Условный рендеринг иконки в зависимости от темы */}
+          {/* Показываем соответствующую иконку в зависимости от темы */}
           {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          {/* Темный режим: иконка солнца (светлая тема) */}
-          {/* Светлый режим: иконка луны (темная тема) */}
         </IconButton>
+        
+        {/* Компонент профиля пользователя (отображается если пользователь авторизован) */}
         {isLoggedIn && <UserProfile />}
       </Toolbar>
     </AppBar>
   );
 };
 
-// Экспортируем компонент для использования в других частях приложения
 export default Header;

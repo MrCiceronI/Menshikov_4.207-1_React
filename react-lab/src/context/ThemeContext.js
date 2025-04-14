@@ -1,52 +1,60 @@
-// src/contexts/ThemeContext.js
-import React, { createContext, useState, useContext } from 'react';
-//import { useEffect } from 'react';
+// src/context/ThemeContext.js
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { createTheme } from '@mui/material/styles';
 
-// 1. Создаем контекст для темы
 const ThemeContext = createContext();
 
-// 2. Провайдер темы - компонент высшего порядка
 export const ThemeProvider = ({ children }) => {
-  // 3. Состояние темы с ленивой инициализацией
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Проверяем сохранённую тему в localStorage при инициализации
     const savedTheme = localStorage.getItem('theme');
-    // Если тема сохранена, возвращаем true для 'dark', иначе false (светлая тема по умолчанию)
     return savedTheme ? savedTheme === 'dark' : false;
   });
 
-  // 4. Функция переключения темы
   const toggleTheme = () => {
-    // Инвертируем текущее состояние темы
     setIsDarkMode(prev => !prev);
   };
 
-  // 5. Эффект для применения изменений темы
-  //useEffect(() => {
-    // Получаем корневой элемент HTML
-  const root = document.documentElement;
-  
-  if (isDarkMode) {
-    // Добавляем класс для темной темы
-    root.classList.add('dark');
-    root.classList.remove('light');
-    // Сохраняем выбор в localStorage
-    localStorage.setItem('theme', 'dark');
-  } else {
-    // Добавляем класс для светлой темы
-    root.classList.add('light');
-    root.classList.remove('dark');
-    // Сохраняем выбор в localStorage
-    localStorage.setItem('theme', 'light');
-  }
-  //}, [isDarkMode]); // Зависимость - при изменении isDarkMode
+  const theme = createTheme({
+    palette: {
+      mode: isDarkMode ? 'dark' : 'light',
+      background: {
+        default: isDarkMode ? '#121212' : '#ffffff',
+        paper: isDarkMode ? '#1e1e1e' : '#f5f5f5'
+      },
+      text: {
+        primary: isDarkMode ? '#ffffff' : '#000000'
+      }
+    },
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 600,
+        md: 900,
+        lg: 1200,
+        xl: 1536,
+      },
+    }
+  });
 
-  // 6. Возвращаем провайдер контекста
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
   return (
     <ThemeContext.Provider 
       value={{ 
-        isDarkMode,  // Текущее состояние темы
-        toggleTheme  // Функция переключения
+        isDarkMode,
+        toggleTheme,
+        theme
       }}
     >
       {children}
@@ -54,5 +62,4 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-// 7. Кастомный хук для удобного доступа к контексту
 export const useTheme = () => useContext(ThemeContext);

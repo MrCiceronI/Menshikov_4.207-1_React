@@ -48,6 +48,8 @@ const Footer = () => {
     window.open('https://github.com/MrCiceronI/Menshikov_4.207-1_React', '_blank');
   };
 
+  if (isMobile) return null;
+
   return (
     // Основной контейнер подвала
     <Box 

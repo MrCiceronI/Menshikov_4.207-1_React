@@ -1,97 +1,79 @@
 // src/App.js
-// Основные импорты React и сторонних библиотек
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Клиентская маршрутизация
-import { Provider } from 'react-redux'; // Обертка для предоставления Redux store
-import { ThemeProvider } from './context/ThemeContext'; // Провайдер темы (dark/light)
-import { store } from './store/store'; // Корневой Redux store приложения
-import { useLoginState } from './hooks/useLoginState'; // Кастомный хук для проверки авторизации
-import './App.css'; // Глобальные CSS-стили
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { ThemeProvider } from './context/ThemeContext';
+import { store } from './store/store';
+import { useLoginState } from './hooks/useLoginState';
+import './App.css';
 
-// Импорт компонентов
-import Header from './components/Header/Header'; // Шапка приложения
-import Menu from './components/Menu/Menu'; // Боковое меню
-import Content from './components/Content/Content'; // Основной контент
-import Footer from './components/Footer/Footer'; // Подвал
-import AuthPage from './pages/AuthPage'; // Страница авторизации
-import FeedbackPage from './pages/FeedbackPage'; // Страница отзывов
-import ProfilePage from './pages/ProfilePage'; // Страница профиля
+// Компоненты
+import Header from './components/Header/Header';
+import Menu from './components/Menu/Menu';
+import Content from './components/Content/Content';
+import Footer from './components/Footer/Footer';
+import AuthPage from './pages/AuthPage';
+import FeedbackPage from './pages/FeedbackPage';
+import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
+import AdminPage from './pages/AdminPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminFeedbacksPage from './pages/AdminFeedbacksPage';
+import BottomMenu from './components/BottomMenu/BottomMenu';
 
-/**
- * Компонент AppContent - ядро приложения
- * Управляет:
- * - Состоянием бокового меню (открыто/закрыто)
- * - Проверкой авторизации пользователя
- * - Маршрутизацией между страницами
- */
+// Route компоненты
+import ProtectedRoute from './components/Routes/ProtectedRoute';
+import AdminRoute from './components/Routes/AdminRoute';
+
 const AppContent = () => {
-  // Состояние для управления видимостью бокового меню
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // Проверка статуса авторизации через кастомный хук
   const isLoggedIn = useLoginState();
 
-  // Переключатель состояния меню
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // Если пользователь не авторизован, показываем страницу входа
   if (!isLoggedIn) {
     return <AuthPage />;
   }
 
-  // Основной layout для авторизованных пользователей
   return (
-    <Router> {/* Обеспечивает клиентскую маршрутизацию */}
+    <Router>
       <div className="app">
-        {/* Шапка приложения с кнопкой бургер-меню */}
         <Header onMenuToggle={toggleMenu} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         
-        {/* Боковое навигационное меню */}
-        <Menu 
-          isOpen={isMenuOpen} 
-          onClose={() => setIsMenuOpen(false)} 
-        />
-        
-        {/* Конфигурация маршрутов приложения */}
         <Routes>
-          {/* Главная страница */}
+          {/* Для всех пользователей */}
           <Route path="/" element={<Content />} />
-          
-          {/* Динамический маршрут для лабораторных работ */}
           <Route path="/lab/:id" element={<Content />} />
-          
-          {/* Страница обратной связи */}
-          <Route path="/feedback" element={<FeedbackPage />} />
-          
-          {/* Страница профиля пользователя */}
-          <Route path="/profile" element={<ProfilePage />} />
-
-          {/* Страница "О себе" */}
           <Route path="/about" element={<AboutPage />} />
+          
+          {/* Только для залогиненных */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+          
+          {/* Только для админов */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         
-        {/* Подвал приложения */}
         <Footer />
+        <BottomMenu />
       </div>
     </Router>
   );
 };
 
-/**
- * Корневой компонент App
- * Обеспечивает:
- * - Доступ к Redux store во всем приложении
- * - Поддержку темы (темный/светлый режим)
- * - Инициализацию основного контента
- */
 function App() {
   return (
-    // Предоставляет Redux store дочерним компонентам
     <Provider store={store}>
-      {/* Обеспечивает доступ к теме во всем приложении */}
       <ThemeProvider>
-        {/* Основной компонент с логикой приложения */}
         <AppContent />
       </ThemeProvider>
     </Provider>

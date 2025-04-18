@@ -24,7 +24,7 @@ const RegisterForm = () => {
   // Обработчик отправки формы
   const onSubmit = (data) => {
     // Диспатчим действие регистрации с данными формы
-    dispatch(registerUser(data));
+    dispatch(registerUser({ ...data, role: 'user' })); // По умолчанию роль 'user'
   };
 
   // Рендер компонента

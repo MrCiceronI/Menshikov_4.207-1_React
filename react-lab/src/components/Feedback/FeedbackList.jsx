@@ -23,6 +23,7 @@ const FeedbackList = () => {
   // feedbacks - список отзывов
   // user - данные текущего пользователя
   const { feedbacks, user } = useSelector(state => state.auth);
+  const isAdmin = user?.role === 'admin';
 
   // Обработчик удаления отзыва
   const handleDelete = (id) => {
@@ -71,7 +72,7 @@ const FeedbackList = () => {
                   secondaryTypographyProps={{ color: isDarkMode ? '#b0b0b0' : '#555555' }} // Цвет подписи
                 />
                 {/* Кнопка удаления (показывается только автору или админу) */}
-                {(user?.id === feedback.userId || user?.email === feedback.author) && (
+                {(user?.id === feedback.userId || user?.email === feedback.author || isAdmin) && (
                   <ListItemSecondaryAction>
                     <IconButton 
                       edge="end" // Выравнивание по правому краю

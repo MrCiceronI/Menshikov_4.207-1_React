@@ -5,8 +5,34 @@
       "name": "Сергей",
       "email": "mr.menshikov.s@gmail.com",
       "password": "111111",
-      "confirmPassword": "111111"
+      "confirmPassword": "111111",
+      "role": "admin"
+    },
+    {
+      "id": "04ae",
+      "name": "Иван",
+      "email": "qwerty@qwe.com",
+      "password": "111111",
+      "confirmPassword": "111111",
+      "role": "user"
+    },
+    {
+      "id": "ef6a",
+      "name": "Собака",
+      "email": "gav@gav.com",
+      "password": "111111",
+      "confirmPassword": "111111",
+      "role": "user",
+      "isBlocked": true
     }
   ],
-  "feedbacks": []
+  "feedbacks": [
+    {
+      "id": "73a4",
+      "author": "qwerty@qwe.com",
+      "message": "Крутой сайт",
+      "date": "15.04.2025, 13:23:45",
+      "userId": "04ae"
+    }
+  ]
 }

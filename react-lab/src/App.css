@@ -50,6 +50,16 @@
   background-color: #f5f5f5;
 }
 
+@media (max-width: 600px) {
+  .app {
+    padding-bottom: 56px; /* Высота нижнего меню */
+  }
+  
+  .layout {
+    padding-bottom: 56px;
+  }
+}
+
 /* Адаптивные стили */
 @media (max-width: 600px) {
   .form-container {

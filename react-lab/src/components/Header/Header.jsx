@@ -34,6 +34,8 @@ const Header = ({ onMenuToggle }) => {
   const { theme } = useTheme();
   // Определяем, является ли устройство мобильным (ширина меньше 'sm')
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user } = useSelector(state => state.auth);
+  const isAdmin = user?.role === 'admin';
 
   return (
     // AppBar - верхняя панель с динамическим цветом фона в зависимости от темы
@@ -69,10 +71,20 @@ const Header = ({ onMenuToggle }) => {
         >
           Лабораторные работы по React
         </Typography>
-
         {/* Блок с навигацией (отображается только на десктопе) */}
         {!isMobile && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Кнопка "Управление" */}
+            {isAdmin && (
+              <Button 
+                component={Link}
+                to="/admin"
+                color="inherit"
+                sx={{ mr: 2 }}
+              >
+                Управление
+              </Button>
+            )}
             {/* Кнопка "О себе" */}
             <Button 
               component={Link} // Рендерится как ссылка

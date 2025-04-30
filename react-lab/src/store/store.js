@@ -4,25 +4,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 // Импорт редьюсеров из отдельных слайсов
-import counterReducer from './counterSlice'; // Редьюсер для счетчика (пример)
+import { apiSlice } from './apiSlice';
 import authReducer from './authSlice';      // Редьюсер для аутентификации
-
-const loadInitialState = () => {
-  const authData = localStorage.getItem('auth');
-  return {
-    auth: {
-      ...authReducer(undefined, { type: '' }), // Получаем initialState из редьюсера
-      isLoggedIn: !!authData,
-      user: authData ? JSON.parse(authData) : null
-    }
-  };
-};
 
 // Создание и экспорт Redux-хранилища
 export const store = configureStore({
   reducer: {
-    counter: counterReducer,
-    auth: authReducer
+    auth: authReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
   },
-  preloadedState: loadInitialState() // Загружаем начальное состояние
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(apiSlice.middleware),
 });

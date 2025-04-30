@@ -1,12 +1,12 @@
-// Импорт необходимых хуков и компонентов из React
-import React, { useMemo, useCallback, useEffect, useRef } from 'react';
-// Импорт хуков для работы с таблицей и сортировкой из библиотеки react-table
+// Импорт зависимостей из React для управления состоянием, эффектами и мемоизацией
+import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
+// Импорт хуков react-table для создания таблицы с сортировкой
 import { useTable, useSortBy } from 'react-table';
-// Импорт хуков для работы с Redux (диспетчер и селектор состояния)
-import { useDispatch, useSelector } from 'react-redux';
-// Импорт асинхронных действий из authSlice для работы с пользователями
-import { updateUserRole, fetchUsersPaginated, blockUser } from '../../store/authSlice';
-// Импорт компонентов Material-UI для построения интерфейса
+// Импорт хука useDispatch из react-redux для отправки действий
+import { useDispatch } from 'react-redux';
+// Импорт действий для изменения роли и блокировки пользователя
+import { updateUserRole, blockUser } from '../../store/authSlice';
+// Импорт компонентов Material-UI для создания UI таблицы и меню
 import {
   Table,
   TableBody,
@@ -22,341 +22,321 @@ import {
   Box,
   useMediaQuery,
   useTheme,
-  CircularProgress
+  CircularProgress,
+  Alert,
 } from '@mui/material';
-// Импорт иконки для кнопки меню действий
+// Импорт иконки для кнопки контекстного меню
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-// Импорт хука для получения темы из кастомного контекста
+// Импорт кастомного хука useTheme для получения состояния темы
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
-// Импорт провайдера и бэкенда для поддержки drag-and-drop функциональности
+// Импорт провайдера и бэкенда для поддержки перетаскивания столбцов
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-// Импорт кастомного компонента для заголовков колонок с поддержкой drag-and-drop
+// Импорт компонента для перетаскиваемых заголовков столбцов
 import DraggableColumnHeader from './DraggableColumnHeader';
+// Импорт хука RTK Query для получения данных пользователей
+import { useGetUsersPaginatedQuery } from '../../store/apiSlice';
 
-// Определение функционального компонента UsersTable
+// Компонент UsersTable отображает таблицу пользователей с поддержкой сортировки, перетаскивания столбцов, пагинации, изменения ролей и блокировки
 const UsersTable = () => {
-  // Получаем функцию dispatch для отправки действий в Redux
+  // Хук для отправки действий в Redux store
   const dispatch = useDispatch();
-  // Извлекаем данные пользователей, пагинацию и флаг загрузки из состояния Redux
-  const { 
-    users, // Массив пользователей
-    usersPagination, // Данные пагинации (currentPage, totalPages, totalItems, perPage)
-    loadingUsers // Флаг, указывающий на загрузку данных
-  } = useSelector(state => state.auth);
-  
-  // Получаем значение темной темы из кастомного контекста
+  // Получение состояния темы (темный/светлый режим) из кастомного контекста
   const { isDarkMode } = useCustomTheme();
-  // Получаем объект темы Material-UI
+  // Хук для доступа к теме Material-UI
   const theme = useTheme();
-  // Проверяем, является ли устройство мобильным (ширина экрана < 'sm')
+  // Проверка, является ли устройство мобильным (экран меньше точки 'sm')
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  // Создаем реф для контейнера таблицы (для отслеживания скролла)
+  // Ссылка на DOM-элемент контейнера таблицы для отслеживания прокрутки
   const tableContainerRef = useRef(null);
-  // Создаем реф для флага загрузки (чтобы избежать множественных запросов)
+  // Флаг для предотвращения множественных запросов при бесконечной прокрутке
   const loadingRef = useRef(false);
 
-  // Состояние для управления меню действий (якорь и выбранный пользователь)
-  const [anchorEl, setAnchorEl] = React.useState(null); // Элемент, к которому привязано меню
-  const [selectedUser, setSelectedUser] = React.useState(null); // Выбранный пользователь
-  const open = Boolean(anchorEl); // Флаг, открыт ли выпадающий список
+  // Состояние для управления контекстным меню
+  const [anchorEl, setAnchorEl] = useState(null); // Элемент, к которому привязано меню
+  const [selectedUser, setSelectedUser] = useState(null); // Выбранный пользователь для действий
+  // Флаг открытия контекстного меню
+  const open = Boolean(anchorEl);
+  // Состояние текущей страницы для пагинации
+  const [page, setPage] = useState(1);
 
-  // Загрузка первой страницы пользователей при монтировании компонента
-  useEffect(() => {
-    // Отправляем действие для получения пользователей (страница 1)
-    dispatch(fetchUsersPaginated(1));
-  }, [dispatch]);
+  // Использование RTK Query для получения данных пользователей с пагинацией
+  const {
+    data: usersData, // Данные, возвращаемые запросом (массив пользователей и пагинация)
+    isLoading, // Флаг начальной загрузки данных
+    isFetching, // Флаг выполнения запроса (включая последующие страницы)
+    isError, // Флаг ошибки запроса
+    error, // Объект ошибки, если запрос завершился неудачно
+  } = useGetUsersPaginatedQuery(page);
 
-  // Обработчик скролла для бесконечной подгрузки данных
+  // Мемоизация массива пользователей для предотвращения лишних рендеров
+  const users = useMemo(() => usersData?.users || [], [usersData]);
+  // Мемоизация объекта пагинации с дефолтными значениями
+  const usersPagination = useMemo(
+    () => usersData?.pagination || {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      perPage: 20,
+    },
+    [usersData]
+  );
+
+  // Функция обработки прокрутки для реализации бесконечной прокрутки
   const handleScroll = useCallback(() => {
-    // Проверяем, существует ли контейнер и не выполняется ли уже загрузка
-    if (!tableContainerRef.current || loadingRef.current) return;
+    // Проверка, что контейнер существует и нет активных запросов
+    if (!tableContainerRef.current || loadingRef.current || isFetching) return;
 
-    // Получаем параметры скролла контейнера
+    // Извлечение параметров прокрутки
     const { scrollTop, scrollHeight, clientHeight } = tableContainerRef.current;
-    // Проверяем, достиг ли пользователь почти низа таблицы (за 100px до конца)
+    // Проверка, достиг ли пользователь нижней части таблицы (с запасом 100px)
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
 
-    // Если пользователь внизу и есть еще страницы для загрузки
-    if (
-      isNearBottom && 
-      usersPagination.currentPage < usersPagination.totalPages
-    ) {
-      // Устанавливаем флаг загрузки
-      loadingRef.current = true;
-      // Запрашиваем следующую страницу пользователей
-      dispatch(fetchUsersPaginated(usersPagination.currentPage + 1))
-        .finally(() => {
-          // Сбрасываем флаг загрузки после завершения запроса
-          loadingRef.current = false;
-        });
+    // Если пользователь внизу и есть еще страницы, увеличиваем номер страницы
+    if (isNearBottom && page < usersPagination.totalPages) {
+      loadingRef.current = true; // Установка флага загрузки
+      setPage((prev) => prev + 1); // Увеличение номера страницы
     }
-  }, [dispatch, usersPagination]);
+  }, [page, usersPagination.totalPages, isFetching]);
 
-  // Добавляем и убираем обработчик скролла при монтировании/размонтировании
+  // Эффект для добавления и удаления обработчика прокрутки
   useEffect(() => {
     const container = tableContainerRef.current;
     if (container) {
-      // Добавляем обработчик события скролла
+      // Добавление обработчика прокрутки
       container.addEventListener('scroll', handleScroll);
-      // Удаляем обработчик при размонтировании компонента
+      // Очистка обработчика при размонтировании компонента
       return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
 
-  // Обработчик клика по кнопке действий (открытие меню)
+  // Эффект для сброса флага загрузки после завершения запроса
+  useEffect(() => {
+    if (!isFetching) {
+      loadingRef.current = false; // Сброс флага после завершения загрузки
+    }
+  }, [isFetching]);
+
+  // Обработчик клика по кнопке действий для открытия контекстного меню
   const handleClick = (event, user) => {
-    // Сохраняем выбранного пользователя
-    setSelectedUser(user);
-    // Устанавливаем якорь для меню
-    setAnchorEl(event.currentTarget);
+    setSelectedUser(user); // Сохранение выбранного пользователя
+    setAnchorEl(event.currentTarget); // Установка якоря для меню
   };
 
-  // Обработчик закрытия меню
+  // Закрытие контекстного меню
   const handleClose = () => {
-    // Сбрасываем якорь, закрывая меню
-    setAnchorEl(null);
+    setAnchorEl(null); // Сброс якоря меню
   };
 
   // Обработчик изменения роли пользователя
   const handleRoleChange = (role) => {
-    // Отправляем действие для обновления роли выбранного пользователя
-    dispatch(updateUserRole({ id: selectedUser.id, role }));
-    // Закрываем меню
-    handleClose();
+    dispatch(updateUserRole({ id: selectedUser.id, role })); // Отправка действия изменения роли
+    handleClose(); // Закрытие меню
   };
 
   // Обработчик блокировки/разблокировки пользователя
   const handleBlockUser = () => {
-    // Отправляем действие для изменения статуса блокировки
-    dispatch(blockUser({ id: selectedUser.id, isBlocked: !selectedUser.isBlocked }));
-    // Закрываем меню
-    handleClose();
+    dispatch(blockUser({ id: selectedUser.id, isBlocked: !selectedUser.isBlocked })); // Отправка действия блокировки
+    handleClose(); // Закрытие меню
   };
 
-  // Состояние для хранения конфигурации колонок таблицы
-  const [columns, setColumns] = React.useState([
-    { 
-      Header: 'ID', // Заголовок колонки
-      accessor: 'id', // Ключ для доступа к данным
-      width: 50 // Ширина колонки
-    },
-    { 
-      Header: 'Имя', 
-      accessor: 'name', 
-      width: 150 
-    },
-    { 
-      Header: 'Email', 
-      accessor: 'email', 
-      width: 200 
-    },
-    { 
+  // Состояние столбцов таблицы
+  const [columns, setColumns] = useState([
+    { Header: 'ID', accessor: 'id', width: 50 }, // Столбец ID
+    { Header: 'Имя', accessor: 'name', width: 150 }, // Столбец имени
+    { Header: 'Email', accessor: 'email', width: 200 }, // Столбец email
+    {
       Header: 'Роль',
-      accessor: 'role', 
+      accessor: 'role',
       width: 100,
-      // Кастомная отрисовка ячейки для выделения администраторов
+      // Кастомное отображение роли с цветом для администратора
       Cell: ({ value }) => (
         <Typography color={value === 'admin' ? 'primary' : 'inherit'}>
           {value}
         </Typography>
-      )
+      ),
     },
     {
       Header: 'Статус',
       accessor: 'isBlocked',
       width: 100,
-      // Кастомная отрисовка ячейки для отображения статуса
+      // Отображение статуса (Заблокирован/Активен)
       Cell: ({ value }) => (
-        <Typography color={'inherit'}>
-          {value ? 'Заблокирован' : 'Активен'}
-        </Typography>
-      )
+        <Typography color={'inherit'}>{value ? 'Заблокирован' : 'Активен'}</Typography>
+      ),
     },
     {
       Header: 'Действия',
       accessor: 'actions',
-      disableSortBy: true, // Отключаем сортировку для этой колонки
-      // Кастомная отрисовка ячейки с кнопкой меню
+      disableSortBy: true, // Отключение сортировки для столбца
       Cell: ({ row }) => (
+        // Кнопка для вызова контекстного меню
         <IconButton
-          color={'inherit'}
+          color="inherit"
           aria-label="more"
           aria-controls="user-menu"
           aria-haspopup="true"
-          onClick={(e) => handleClick(e, row.original)} // Открываем меню при клике
+          onClick={(e) => handleClick(e, row.original)}
         >
           <MoreVertIcon />
         </IconButton>
       ),
-      width: 80
-    }
+      width: 80,
+    },
   ]);
 
-  // Функция для перестановки колонок при drag-and-drop
+  // Функция для изменения порядка столбцов при перетаскивании
   const reorderColumns = (draggedId, targetId) => {
-    // Находим индексы перемещаемой и целевой колонок
-    const draggedIndex = columns.findIndex(col => col.accessor === draggedId);
-    const targetIndex = columns.findIndex(col => col.accessor === targetId);
-    
-    // Проверяем, найдены ли индексы
+    // Поиск индексов перетаскиваемого и целевого столбцов
+    const draggedIndex = columns.findIndex((col) => col.accessor === draggedId);
+    const targetIndex = columns.findIndex((col) => col.accessor === targetId);
+    // Если один из столбцов не найден, прерываем выполнение
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // Создаем новый массив колонок
+    // Создание нового массива столбцов
     const newColumns = [...columns];
-    // Удаляем перемещаемую колонку
+    // Удаление перетаскиваемого столбца и вставка его на новое место
     const [removed] = newColumns.splice(draggedIndex, 1);
-    // Вставляем её в новую позицию
     newColumns.splice(targetIndex, 0, removed);
-    
-    // Обновляем состояние колонок
+    // Обновление состояния столбцов
     setColumns(newColumns);
   };
 
-  // Мемоизация колонок и данных для оптимизации производительности
+  // Мемоизация столбцов и данных для предотвращения лишних рендеров
   const memoizedColumns = useMemo(() => columns, [columns]);
   const memoizedData = useMemo(() => users, [users]);
 
-  // Инициализация таблицы с использованием react-table
-  const {
-    getTableProps, // Пропсы для всей таблицы
-    getTableBodyProps, // Пропсы для тела таблицы
-    headerGroups, // Группы заголовков
-    rows, // Строки данных
-    prepareRow // Функция для подготовки строки к рендерингу
-  } = useTable(
+  // Настройка таблицы с использованием react-table
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable(
     {
-      columns: memoizedColumns, // Колонки таблицы
-      data: memoizedData, // Данные таблицы
-      initialState: {
-        sortBy: [{ id: 'id', desc: false }] // Начальная сортировка по ID (по возрастанию)
-      }
+      columns: memoizedColumns, // Мемоированные столбцы
+      data: memoizedData, // Мемоированные данные
+      initialState: { sortBy: [{ id: 'id', desc: false }] }, // Начальная сортировка по ID (возрастание)
     },
-    useSortBy // Подключаем хук для сортировки
+    useSortBy // Подключение хука сортировки
   );
 
-  // Рендеринг компонента
+  // Условный рендеринг в зависимости от состояния загрузки и данных
+  if (isLoading && users.length === 0) {
+    return <CircularProgress />; // Индикатор начальной загрузки
+  }
+
+  if (isError) {
+    return <Alert severity="error">{error?.data?.message || 'Ошибка загрузки пользователей'}</Alert>; // Сообщение об ошибке
+  }
+
+  if (users.length === 0 && !isLoading) {
+    return <Typography>Нет пользователей</Typography>; // Сообщение, если данные отсутствуют
+  }
+
+  // Основной рендеринг компонента
   return (
-    // Оборачиваем таблицу в провайдер drag-and-drop
+    // Провайдер для поддержки перетаскивания столбцов
     <DndProvider backend={HTML5Backend}>
       <Box sx={{ width: '100%', overflow: 'hidden' }}>
-        {/* Контейнер таблицы с поддержкой скролла */}
-        <TableContainer 
-          ref={tableContainerRef} // Реф для отслеживания скролла
-          component={Paper} // Используем Paper для стилизации
+        {/* Контейнер таблицы с вертикальной и горизонтальной прокруткой */}
+        <TableContainer
+          ref={tableContainerRef}
+          component={Paper}
           sx={{
-            maxHeight: 'calc(100vh - 200px)', // Ограничиваем высоту таблицы
-            maxWidth: '100vw', // Ограничиваем ширину
-            overflowX: 'auto', // Горизонтальный скролл при необходимости
-            '&::-webkit-scrollbar': {
-              height: '6px' // Стилизация полосы прокрутки
-            },
-            backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон в зависимости от темы
-            borderRadius: '3px' // Скругление углов
+            maxHeight: 'calc(100vh - 200px)', // Ограничение высоты для прокрутки
+            maxWidth: '100vw', // Ограничение ширины
+            overflowX: 'auto', // Горизонтальная прокрутка
+            '&::-webkit-scrollbar': { height: '6px' }, // Стилизация полосы прокрутки
+            backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона
+            borderRadius: '3px', // Закругленные углы
           }}
         >
-          {/* Таблица Material-UI */}
-          <Table 
-            {...getTableProps()} // Пропсы от react-table
-            stickyHeader // Фиксированный заголовок
-            size="small" // Компактный размер ячеек
-            sx={{ minWidth: 'max-content' }} // Минимальная ширина таблицы
-          >
-            {/* Заголовок таблицы */}
+          {/* Таблица с фиксированным заголовком */}
+          <Table {...getTableProps()} stickyHeader size="small" sx={{ minWidth: 'max-content' }}>
             <TableHead>
-              {headerGroups.map(headerGroup => (
+              {headerGroups.map((headerGroup) => (
                 <TableRow {...headerGroup.getHeaderGroupProps()}>
-                  {headerGroup.headers.map(column => (
-                    // Кастомный компонент для заголовков с поддержкой drag-and-drop
-                    <DraggableColumnHeader 
+                  {headerGroup.headers.map((column) => (
+                    // Компонент для перетаскиваемых заголовков
+                    <DraggableColumnHeader
                       key={column.id}
                       column={column}
-                      reorderColumns={reorderColumns} // Функция для перестановки колонок
+                      reorderColumns={reorderColumns}
                       sx={{
                         color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста
-                        backgroundColor: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Фон заголовка
+                        backgroundColor: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Цвет фона заголовка
                         fontWeight: 'bold', // Жирный шрифт
-                        minWidth: column.width, // Минимальная ширина колонки
-                        // Фиксация колонки ID на мобильных устройствах
+                        minWidth: column.width, // Минимальная ширина столбца
+                        // Фиксация столбца ID на мобильных устройствах
                         position: column.Header === 'ID' && isMobile ? 'sticky' : null,
                         left: column.Header === 'ID' && isMobile ? 0 : null,
-                        zIndex: column.Header === 'ID' && isMobile ? 1 : null
+                        zIndex: column.Header === 'ID' && isMobile ? 1 : null,
                       }}
                     />
                   ))}
                 </TableRow>
               ))}
             </TableHead>
-            {/* Тело таблицы */}
             <TableBody {...getTableBodyProps()}>
-              {rows.map(row => {
-                prepareRow(row); // Подготавливаем строку для рендеринга
+              {rows.map((row) => {
+                prepareRow(row); // Подготовка строки для рендеринга
                 return (
                   <TableRow {...row.getRowProps()}>
-                    {row.cells.map(cell => (
+                    {row.cells.map((cell) => (
                       <TableCell
                         {...cell.getCellProps()}
                         sx={{
-                          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон ячейки
+                          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона ячейки
                           color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста
-                          minWidth: cell.column.width, // Минимальная ширина
-                          // Фиксация колонки ID на мобильных устройствах
+                          minWidth: cell.column.width, // Минимальная ширина ячейки
+                          // Фиксация столбца ID на мобильных устройствах
                           position: cell.column.Header === 'ID' && isMobile ? 'sticky' : null,
                           left: cell.column.Header === 'ID' && isMobile ? 0 : null,
-                          zIndex: cell.column.Header === 'ID' && isMobile ? 1 : null
+                          zIndex: cell.column.Header === 'ID' && isMobile ? 1 : null,
                         }}
                       >
-                        {cell.render('Cell')} {/* Рендерим содержимое ячейки */}
+                        {cell.render('Cell')} {/* Рендеринг содержимого ячейки */}
                       </TableCell>
                     ))}
                   </TableRow>
                 );
               })}
-              
-              {/* Индикатор загрузки при подгрузке данных */}
-              {loadingUsers && (
+              {/* Индикатор загрузки при подгрузке новых данных */}
+              {isFetching && users.length > 0 && (
                 <TableRow>
                   <TableCell colSpan={columns.length} align="center">
-                    <CircularProgress size={24} /> {/* Спиннер загрузки */}
+                    <CircularProgress size={24} />
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </TableContainer>
-        
-        {/* Информация о пагинации */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          mt: 1, // Отступ сверху
-          color: isDarkMode ? '#ffffff' : '#000000' // Цвет текста
-        }}>
-          <Typography variant="body2">
-            Страница {usersPagination.currentPage} из {usersPagination.totalPages} • 
-            Всего пользователей: {usersPagination.totalItems}
-          </Typography>
-        </Box>
-
-        {/* Меню действий для пользователя */}
-        <Menu
-          id="user-menu"
-          anchorEl={anchorEl} // Элемент, к которому привязано меню
-          open={open} // Флаг открытия
-          onClose={handleClose} // Обработчик закрытия
-          PaperProps={{
-            style: {
-              backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон меню
-              color: isDarkMode ? '#ffffff' : '#111111' // Цвет текста
-            }
+        {/* Отображение информации о пагинации */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mt: 1,
+            color: isDarkMode ? '#ffffff' : '#000000',
           }}
         >
-          <MenuItem onClick={() => handleRoleChange('admin')}>
-            Сделать администратором
-          </MenuItem>
-          <MenuItem onClick={() => handleRoleChange('user')}>
-            Сделать пользователем
-          </MenuItem>
+          <Typography variant="body2">
+            Страница {usersPagination.currentPage} из {usersPagination.totalPages} • Всего
+            пользователей: {usersPagination.totalItems}
+          </Typography>
+        </Box>
+        {/* Контекстное меню для действий с пользователем */}
+        <Menu
+          id="user-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          PaperProps={{
+            style: {
+              backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона меню
+              color: isDarkMode ? '#ffffff' : '#111111', // Цвет текста
+            },
+          }}
+        >
+          <MenuItem onClick={() => handleRoleChange('admin')}>Сделать администратором</MenuItem>
+          <MenuItem onClick={() => handleRoleChange('user')}>Сделать пользователем</MenuItem>
           <MenuItem onClick={handleBlockUser}>
             {selectedUser?.isBlocked ? 'Разблокировать' : 'Заблокировать'}
           </MenuItem>
@@ -366,5 +346,5 @@ const UsersTable = () => {
   );
 };
 
-// Экспортируем компонент по умолчанию
+// Экспорт компонента по умолчанию
 export default UsersTable;

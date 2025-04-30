@@ -202,74 +202,6 @@ export const updateUserRole = createAsyncThunk(
 );
 
 /**
- * Асинхронное действие для получения пользователей с пагинацией
- * @param {number} page - Номер текущей страницы
- * @returns {Promise} - Возвращает объект с пользователями и данными пагинации
- */
-export const fetchUsersPaginated = createAsyncThunk(
-  'auth/fetchUsersPaginated',
-  async (page, { rejectWithValue }) => {
-    try {
-      // Задаем количество элементов на странице
-      const perPage = 20;
-      // Получаем всех пользователей (в данном случае без серверной пагинации)
-      const allUsersResponse = await axios.get(`${API_URL}/users`);
-      const totalItems = allUsersResponse.data.length;
-      
-      // Формируем объект с данными:
-      // - Список пользователей
-      // - Метаданные пагинации
-      return {
-        users: allUsersResponse.data,
-        pagination: {
-          currentPage: page, // Текущая страница
-          totalPages: Math.ceil(totalItems / perPage), // Общее количество страниц
-          totalItems, // Общее количество пользователей
-          perPage // Элементов на странице
-        }
-      };
-    } catch (error) {
-      // В случае ошибки возвращаем её сообщение
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-/**
- * Асинхронное действие для получения отзывов с пагинацией
- * @param {number} page - Номер текущей страницы
- * @returns {Promise} - Возвращает объект с отзывами и данными пагинации
- */
-export const fetchFeedbacksPaginated = createAsyncThunk(
-  'auth/fetchFeedbacksPaginated',
-  async (page, { rejectWithValue }) => {
-    try {
-      // Задаем количество элементов на странице
-      const perPage = 20;
-      // Получаем все отзывы (без серверной пагинации)
-      const allFeedbacksResponse = await axios.get(`${API_URL}/feedbacks`);
-      const totalItems = allFeedbacksResponse.data.length;
-      
-      // Формируем объект с данными:
-      // - Список отзывов
-      // - Метаданные пагинации
-      return {
-        feedbacks: allFeedbacksResponse.data,
-        pagination: {
-          currentPage: page, // Текущая страница
-          totalPages: Math.ceil(totalItems / perPage), // Общее количество страниц
-          totalItems, // Общее количество отзывов
-          perPage // Элементов на странице
-        }
-      };
-    } catch (error) {
-      // В случае ошибки возвращаем её сообщение
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-/**
  * Асинхронное действие для блокировки/разблокировки пользователя
  * @param {Object} params - Параметры
  * @param {number} params.id - ID пользователя
@@ -303,22 +235,6 @@ const authSlice = createSlice({
     user: JSON.parse(localStorage.getItem('auth')) || null,
     // Массив для хранения списка отзывов
     feedbacks: [],
-    // Массив для хранения списка пользователей (для админ-панели)
-    users: [],
-    // Объект для хранения данных пагинации пользователей
-    usersPagination: {
-      currentPage: 1, // Текущая страница
-      totalPages: 1, // Общее количество страниц
-      totalItems: 0, // Общее количество пользователей
-      perPage: 20 // Элементов на странице
-    },
-    // Объект для хранения данных пагинации отзывов
-    feedbacksPagination: {
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      perPage: 20
-    },
     // Флаг блокировки текущего пользователя
     isBlocked: false,
     // Флаг загрузки данных пользователей
@@ -429,42 +345,6 @@ const authSlice = createSlice({
           state.user = action.payload;
           localStorage.setItem('auth', JSON.stringify(action.payload));
         }
-      })
-      
-      // Обработчики для fetchUsersPaginated
-      .addCase(fetchUsersPaginated.pending, (state) => {
-        // Устанавливаем флаг загрузки пользователей
-        state.loadingUsers = true;
-      })
-      .addCase(fetchUsersPaginated.fulfilled, (state, action) => {
-        // Сбрасываем флаг загрузки
-        state.loadingUsers = false;
-        // Обновляем список пользователей
-        state.users = action.payload.users;
-        // Обновляем данные пагинации
-        state.usersPagination = action.payload.pagination;
-      })
-      .addCase(fetchUsersPaginated.rejected, (state, action) => {
-        state.loadingUsers = false;
-        state.error = action.payload;
-      })
-      
-      // Обработчики для fetchFeedbacksPaginated
-      .addCase(fetchFeedbacksPaginated.pending, (state) => {
-        // Устанавливаем флаг загрузки отзывов
-        state.loadingFeedbacks = true;
-      })
-      .addCase(fetchFeedbacksPaginated.fulfilled, (state, action) => {
-        // Сбрасываем флаг загрузки
-        state.loadingFeedbacks = false;
-        // Обновляем список отзывов
-        state.feedbacks = action.payload.feedbacks;
-        // Обновляем данные пагинации
-        state.feedbacksPagination = action.payload.pagination;
-      })
-      .addCase(fetchFeedbacksPaginated.rejected, (state, action) => {
-        state.loadingFeedbacks = false;
-        state.error = action.payload;
       })
       
       // Обработчик для blockUser

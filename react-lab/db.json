@@ -14,7 +14,8 @@
       "email": "qwerty@qwe.com",
       "password": "111111",
       "confirmPassword": "111111",
-      "role": "user"
+      "role": "admin",
+      "isBlocked": false
     },
     {
       "id": "ef6a",
@@ -28,11 +29,11 @@
   ],
   "feedbacks": [
     {
-      "id": "73a4",
-      "author": "qwerty@qwe.com",
-      "message": "Крутой сайт",
-      "date": "15.04.2025, 13:23:45",
-      "userId": "04ae"
+      "id": "779d",
+      "author": "mr.menshikov.s@gmail.com",
+      "message": "Крутой сайт! Я наконец-то закончил делать лабораторные работы! Добби свободен!",
+      "date": "18.04.2025, 16:10:38",
+      "userId": "9c16"
     }
   ]
 }

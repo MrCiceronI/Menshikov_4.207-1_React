@@ -1,135 +1,138 @@
-// src/components/Feedback/FeedbackForm.jsx
-// Импорт необходимых библиотек и компонентов
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form'; // Хук для управления формой
-import { useDispatch, useSelector } from 'react-redux'; // Redux хуки
-import { addFeedback, fetchFeedbacks } from '../../store/authSlice'; // Экшены для работы с отзывами
-// Компоненты Material-UI
-import { TextField, Button, Box, Typography, Alert, Paper } from '@mui/material';
-import { useTheme } from '../../context/ThemeContext'; // Контекст темы
+// Импорт React для создания компонента
+import React from 'react';
+// Импорт хука useForm из react-hook-form для управления формой
+import { useForm } from 'react-hook-form';
+// Импорт компонентов Material-UI для UI формы
+import { 
+  TextField, // Поле ввода
+  Button, // Кнопка
+  Box, // Контейнер для компоновки
+  Typography, // Текст
+  Alert, // Уведомление об ошибке
+  Paper, // Контейнер с тенью
+  CircularProgress // Индикатор загрузки
+} from '@mui/material';
+// Импорт кастомного хука для получения состояния темы
+import { useTheme } from '../../context/ThemeContext';
+// Импорт хука для доступа к состоянию Redux
+import { useSelector } from 'react-redux';
+// Импорт RTK Query мутации для добавления отзыва
+import { useAddNewFeedbackMutation } from '../../store/apiSlice';
 
+// Компонент FeedbackForm отображает форму для отправки отзывов
 const FeedbackForm = () => {
-  // Инициализация хука useForm:
-  // register - регистрация полей формы
-  // handleSubmit - обработчик отправки
-  // errors - объект ошибок валидации
-  // reset - функция сброса формы
+  // Извлечение методов и состояния формы из useForm
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  // Получение состояния темы (темный/светлый режим)
+  const { isDarkMode } = useTheme();
+  // Получение данных пользователя из Redux store
+  const { user } = useSelector(state => state.auth);
   
-  const dispatch = useDispatch(); // Хук для отправки экшенов
-  // Получаем состояние из Redux:
-  // user - данные текущего пользователя
-  // loading - состояние загрузки
-  // error - ошибки
-  const { user, loading, error } = useSelector(state => state.auth);
-  const { isDarkMode } = useTheme(); // Получаем текущую тему
-
-  // Эффект для загрузки отзывов при монтировании компонента
-  useEffect(() => {
-    dispatch(fetchFeedbacks());
-  }, [dispatch]);
+  // Использование RTK Query мутации для отправки отзыва
+  const [addFeedback, { isLoading, isError, error }] = useAddNewFeedbackMutation();
 
   // Обработчик отправки формы
-  const onSubmit = (data) => {
-    // Формируем объект отзыва:
-    // - данные из формы
-    // - автор (email пользователя или "Аноним")
-    // - текущая дата
-    // - ID пользователя (если авторизован)
+  const onSubmit = async (data) => {
+    // Формирование объекта отзыва
     const feedback = {
-      ...data,
-      author: user?.email || 'Аноним',
-      date: new Date().toLocaleString(),
-      userId: user?.id
+      ...data, // Данные из формы (author, message)
+      author: user?.email || 'Аноним', // Email пользователя или 'Аноним'
+      date: new Date().toLocaleString(), // Текущая дата и время
+      userId: user?.id // ID пользователя (если есть)
     };
-    dispatch(addFeedback(feedback)); // Отправляем отзыв
-    reset(); // Сбрасываем форму после отправки
+    
+    try {
+      // Отправка отзыва через мутацию
+      await addFeedback(feedback).unwrap();
+      // Сброс формы после успешной отправки
+      reset();
+    } catch (err) {
+      // Логирование ошибки в консоль
+      console.error('Failed to add feedback:', err);
+    }
   };
 
+  // Рендеринг компонента
   return (
-    // Paper - контейнер с тенью
+    // Контейнер формы с тенью и адаптивным фоном
     <Paper
-      elevation={3} // Уровень тени
+      elevation={3} // Тень для визуального выделения
       sx={{
         p: 3, // Внутренние отступы
         mb: 3, // Внешний отступ снизу
-        backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон по теме
-        color: isDarkMode ? '#ffffff' : '#000000' // Цвет текста по теме
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона
+        color: isDarkMode ? '#ffffff' : '#000000' // Цвет текста
       }}
     >
-      {/* Форма для отправки отзыва */}
+      {/* Форма с обработчиком отправки */}
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         {/* Заголовок формы */}
         <Typography 
           variant="h5" 
-          gutterBottom // Отступ снизу
-          sx={{ color: isDarkMode ? '#ffffff' : '#000000' }} // Цвет по теме
+          gutterBottom 
+          sx={{ color: isDarkMode ? '#ffffff' : '#000000' }}
         >
           Обратная связь
+          {/* Индикатор загрузки при отправке */}
+          {isLoading && <CircularProgress size={20} sx={{ ml: 2 }} />}
         </Typography>
         
-        {/* Блок для отображения ошибок */}
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 2, // Отступ снизу
-              backgroundColor: isDarkMode ? '#d32f2f' : '#fdecea' // Фон по теме
-            }}
-          >
-            {error}
+        {/* Уведомление об ошибке при отправке */}
+        {isError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error?.data?.message || 'Ошибка при отправке отзыва'}
           </Alert>
         )}
 
-        {/* Поле для ввода имени */}
+        {/* Поле для имени автора */}
         <TextField
-          label="Ваше имя"
-          fullWidth // На всю ширину
-          margin="normal" // Стандартные отступы
-          {...register('author', { required: 'Имя обязательно' })} // Валидация
+          label="Ваше имя" // Метка поля
+          fullWidth // Полная ширина
+          margin="normal" // Отступы
+          {...register('author', { required: 'Имя обязательно' })} // Регистрация поля с валидацией
           defaultValue={user?.email || ''} // Значение по умолчанию (email пользователя)
-          error={!!errors.author} // Показать ошибку если есть
+          error={!!errors.author} // Отображение ошибки
           helperText={errors.author?.message} // Текст ошибки
           sx={{
-            // Стили для разных состояний в темной/светлой теме
+            // Стили для темной/светлой темы
             '& .MuiInputBase-root': {
-              color: isDarkMode ? '#ffffff' : '#000000',
+              color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста ввода
             },
             '& .MuiInputLabel-root': {
-              color: isDarkMode ? '#ffffff' : '#000000',
+              color: isDarkMode ? '#ffffff' : '#000000', // Цвет метки
             },
             '& .MuiOutlinedInput-root': {
               '& fieldset': {
-                borderColor: isDarkMode ? '#555' : '#ccc',
+                borderColor: isDarkMode ? '#555' : '#ccc', // Цвет границы
               },
               '&:hover fieldset': {
-                borderColor: isDarkMode ? '#777' : '#999',
+                borderColor: isDarkMode ? '#777' : '#999', // Цвет границы при наведении
               },
             },
             '& .MuiFormHelperText-root': {
-              color: isDarkMode ? '#b0b0b0' : '#555',
+              color: isDarkMode ? '#b0b0b0' : '#555', // Цвет текста ошибки
             }
           }}
         />
         
-        {/* Поле для ввода сообщения */}
+        {/* Поле для сообщения */}
         <TextField
-          label="Сообщение"
-          fullWidth
-          multiline // Многострочное поле
-          rows={4} // Количество видимых строк
-          margin="normal"
+          label="Сообщение" // Метка поля
+          fullWidth // Полная ширина
+          multiline // Многострочный ввод
+          rows={4} // Количество строк
+          margin="normal" // Отступы
           {...register('message', { 
-            required: 'Сообщение обязательно',
-            minLength: { // Минимальная длина сообщения
+            required: 'Сообщение обязательно', // Обязательное поле
+            minLength: {
               value: 10,
-              message: 'Сообщение должно быть не менее 10 символов'
+              message: 'Сообщение должно быть не менее 10 символов' // Минимальная длина
             }
-          })}
-          error={!!errors.message}
-          helperText={errors.message?.message}
+          })} // Регистрация поля с валидацией
+          error={!!errors.message} // Отображение ошибки
+          helperText={errors.message?.message} // Текст ошибки
           sx={{
-            // Аналогичные стили для темной/светлой темы
+            // Стили для темной/светлой темы (аналогично полю author)
             '& .MuiInputBase-root': {
               color: isDarkMode ? '#ffffff' : '#000000',
             },
@@ -150,26 +153,25 @@ const FeedbackForm = () => {
           }}
         />
         
-        {/* Кнопка отправки */}
+        {/* Кнопка отправки формы */}
         <Button 
-          type="submit" 
-          variant="contained" 
-          disabled={loading} // Блокировка при загрузке
+          type="submit" // Тип кнопки для отправки формы
+          variant="contained" // Стиль кнопки (заполненная)
+          disabled={isLoading} // Отключение во время загрузки
           sx={{ 
             mt: 2, // Отступ сверху
             backgroundColor: isDarkMode ? '#1976d2' : '#1976d2', // Цвет фона
             color: '#ffffff', // Цвет текста
-            '&:hover': { // Стиль при наведении
-              backgroundColor: isDarkMode ? '#1565c0' : '#1565c0'
-            }
+            '&:hover': { backgroundColor: isDarkMode ? '#1565c0' : '#1565c0' } // Цвет при наведении
           }}
         >
-          {/* Меняем текст при загрузке */}
-          {loading ? 'Отправка...' : 'Отправить'}
+          {/* Текст кнопки меняется в зависимости от состояния загрузки */}
+          {isLoading ? 'Отправка...' : 'Отправить'}
         </Button>
       </Box>
     </Paper>
   );
 };
 
+// Экспорт компонента по умолчанию
 export default FeedbackForm;

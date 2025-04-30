@@ -1,12 +1,12 @@
-// Импорт необходимых хуков React для работы с состоянием, эффектами и оптимизацией
-import React, { useMemo, useEffect, useCallback, useRef } from 'react';
-// Импорт хуков библиотеки react-table для создания таблицы и сортировки
+// Импорт зависимостей из React для управления состоянием, эффектами и мемоизацией
+import React, { useMemo, useEffect, useCallback, useRef, useState } from 'react';
+// Импорт хуков react-table для создания таблицы с сортировкой
 import { useTable, useSortBy } from 'react-table';
-// Импорт хуков Redux для взаимодействия с хранилищем
-import { useDispatch, useSelector } from 'react-redux';
-// Импорт асинхронных действий из authSlice для работы с отзывами
-import { deleteFeedback, fetchFeedbacksPaginated } from '../../store/authSlice';
-// Импорт компонентов Material-UI для построения интерфейса
+// Импорт хука useDispatch из react-redux для отправки действий
+import { useDispatch } from 'react-redux';
+// Импорт действия deleteFeedback из среза authSlice
+import { deleteFeedback } from '../../store/authSlice';
+// Импорт компонентов Material-UI для создания UI таблицы и меню
 import {
   Table,
   TableBody,
@@ -23,314 +23,281 @@ import {
   CircularProgress,
   Alert,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material';
-// Импорт иконки для кнопки меню действий
+// Импорт иконки для кнопки контекстного меню
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-// Импорт хука для получения темы из кастомного контекста
+// Импорт кастомного хука useTheme для получения состояния темы
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
-// Импорт провайдера и бэкенда для поддержки drag-and-drop
+// Импорт провайдера и бэкенда для поддержки перетаскивания столбцов
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-// Импорт кастомного компонента для заголовков колонок с поддержкой drag-and-drop
+// Импорт компонента для перетаскиваемых заголовков столбцов
 import DraggableColumnHeader from './DraggableColumnHeader';
+// Импорт хука RTK Query для получения данных отзывов
+import { useGetFeedbacksPaginatedQuery } from '../../store/apiSlice';
 
-// Определение функционального компонента FeedbacksTable
+// Компонент FeedbacksTable отображает таблицу отзывов с поддержкой сортировки, перетаскивания столбцов, пагинации и удаления записей
 const FeedbacksTable = () => {
-  // Получаем функцию dispatch для отправки действий в Redux
+  // Хук для отправки действий в Redux store
   const dispatch = useDispatch();
-  // Получаем значение темной темы из кастомного контекста
+  // Получение состояния темы (темный/светлый режим) из кастомного контекста
   const { isDarkMode } = useCustomTheme();
-  // Получаем объект темы Material-UI
+  // Хук для доступа к теме Material-UI
   const theme = useTheme();
-  // Проверяем, является ли устройство мобильным (ширина экрана < 'sm')
+  // Проверка, является ли устройство мобильным (экран меньше точки 'sm')
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  // Извлекаем данные отзывов, пагинацию, флаг загрузки и ошибку из состояния Redux
-  const { 
-    feedbacks, // Массив отзывов
-    feedbacksPagination, // Данные пагинации (currentPage, totalPages, totalItems, perPage)
-    loadingFeedbacks, // Флаг загрузки данных
-    error // Сообщение об ошибке (если есть)
-  } = useSelector(state => state.auth);
-
-  // Создаем реф для контейнера таблицы (для отслеживания скролла)
+  // Ссылка на DOM-элемент контейнера таблицы для отслеживания прокрутки
   const tableContainerRef = useRef(null);
-  // Создаем реф для флага загрузки (чтобы избежать множественных запросов)
+  // Флаг для предотвращения множественных запросов при бесконечной прокрутке
   const loadingRef = useRef(false);
 
-  // Состояние для управления меню действий (якорь и выбранный отзыв)
-  const [anchorEl, setAnchorEl] = React.useState(null); // Элемент, к которому привязано меню
-  const [selectedFeedback, setSelectedFeedback] = React.useState(null); // Выбранный отзыв
-  const open = Boolean(anchorEl); // Флаг, открыт ли выпадающий список
+  // Состояние для управления контекстным меню
+  const [anchorEl, setAnchorEl] = useState(null); // Элемент, к которому привязано меню
+  const [selectedFeedback, setSelectedFeedback] = useState(null); // Выбранный отзыв для действий
+  // Флаг открытия контекстного меню
+  const open = Boolean(anchorEl);
+  // Состояние текущей страницы для пагинации
+  const [page, setPage] = useState(1);
 
-  // Загрузка первой страницы отзывов при монтировании компонента
-  useEffect(() => {
-    // Отправляем действие для получения отзывов (страница 1)
-    dispatch(fetchFeedbacksPaginated(1));
-  }, [dispatch]);
+  // Использование RTK Query для получения данных отзывов с пагинацией
+  const {
+    data: feedbacksData, // Данные, возвращаемые запросом (массив отзывов и пагинация)
+    isLoading, // Флаг начальной загрузки данных
+    isFetching, // Флаг выполнения запроса (включая последующие страницы)
+    isError, // Флаг ошибки запроса
+    error, // Объект ошибки, если запрос завершился неудачно
+  } = useGetFeedbacksPaginatedQuery(page);
 
-  // Обработчик скролла для бесконечной подгрузки данных
+  // Мемоизация массива отзывов для предотвращения лишних рендеров
+  const feedbacks = useMemo(() => feedbacksData?.feedbacks || [], [feedbacksData]);
+  // Мемоизация объекта пагинации с дефолтными значениями
+  const feedbacksPagination = useMemo(
+    () => feedbacksData?.pagination || {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      perPage: 20,
+    },
+    [feedbacksData]
+  );
+
+  // Функция обработки прокрутки для реализации бесконечной прокрутки
   const handleScroll = useCallback(() => {
-    // Проверяем, существует ли контейнер и не выполняется ли уже загрузка
-    if (!tableContainerRef.current || loadingRef.current) return;
+    // Проверка, что контейнер существует и нет активных запросов
+    if (!tableContainerRef.current || loadingRef.current || isFetching) return;
 
-    // Получаем параметры скролла контейнера
+    // Извлечение параметров прокрутки
     const { scrollTop, scrollHeight, clientHeight } = tableContainerRef.current;
-    // Проверяем, достиг ли пользователь почти низа таблицы (за 100px до конца)
+    // Проверка, достиг ли пользователь нижней части таблицы (с запасом 100px)
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
 
-    // Если пользователь внизу и есть еще страницы для загрузки
-    if (
-      isNearBottom && 
-      feedbacksPagination.currentPage < feedbacksPagination.totalPages
-    ) {
-      // Устанавливаем флаг загрузки
-      loadingRef.current = true;
-      // Запрашиваем следующую страницу отзывов
-      dispatch(fetchFeedbacksPaginated(feedbacksPagination.currentPage + 1))
-        .finally(() => {
-          // Сбрасываем флаг загрузки после завершения запроса
-          loadingRef.current = false;
-        });
+    // Если пользователь внизу и есть еще страницы, увеличиваем номер страницы
+    if (isNearBottom && page < feedbacksPagination.totalPages) {
+      loadingRef.current = true; // Установка флага загрузки
+      setPage((prev) => prev + 1); // Увеличение номера страницы
     }
-  }, [dispatch, feedbacksPagination]);
+  }, [page, feedbacksPagination.totalPages, isFetching]);
 
-  // Добавляем и убираем обработчик скролла при монтировании/размонтировании
+  // Эффект для добавления и удаления обработчика прокрутки
   useEffect(() => {
     const container = tableContainerRef.current;
     if (container) {
-      // Добавляем обработчик события скролла
+      // Добавление обработчика прокрутки
       container.addEventListener('scroll', handleScroll);
-      // Удаляем обработчик при размонтировании компонента
+      // Очистка обработчика при размонтировании компонента
       return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
 
-  // Обработчик клика по кнопке действий (открытие меню)
+  // Эффект для сброса флага загрузки после завершения запроса
+  useEffect(() => {
+    if (!isFetching) {
+      loadingRef.current = false; // Сброс флага после завершения загрузки
+    }
+  }, [isFetching]);
+
+  // Обработчик клика по кнопке действий для открытия контекстного меню
   const handleClick = (event, feedback) => {
-    // Сохраняем выбранный отзыв
-    setSelectedFeedback(feedback);
-    // Устанавливаем якорь для меню
-    setAnchorEl(event.currentTarget);
+    setSelectedFeedback(feedback); // Сохранение выбранного отзыва
+    setAnchorEl(event.currentTarget); // Установка якоря для меню
   };
 
-  // Обработчик закрытия меню
+  // Закрытие контекстного меню
   const handleClose = () => {
-    // Сбрасываем якорь, закрывая меню
-    setAnchorEl(null);
+    setAnchorEl(null); // Сброс якоря меню
   };
 
   // Обработчик удаления отзыва
   const handleDelete = () => {
-    // Отправляем действие для удаления выбранного отзыва
-    dispatch(deleteFeedback(selectedFeedback.id));
-    // Закрываем меню
-    handleClose();
+    dispatch(deleteFeedback(selectedFeedback.id)); // Отправка действия удаления
+    handleClose(); // Закрытие меню
   };
 
-  // Состояние для хранения конфигурации колонок таблицы
-  const [columns, setColumns] = React.useState([
-    { 
-      Header: 'ID', // Заголовок колонки
-      accessor: 'id', // Ключ для доступа к данным
-      width: 50 // Ширина колонки
-    },
-    { 
-      Header: 'Автор', 
-      accessor: 'author', 
-      width: 150 
-    },
-    { 
-      Header: 'Сообщение', 
-      accessor: 'message', 
-      width: 300 
-    },
-    { 
-      Header: 'Дата', 
-      accessor: 'date', 
-      width: 150 
-    },
-    { 
-      Header: 'Действия', 
-      accessor: 'actions', 
-      disableSortBy: true, // Отключаем сортировку для этой колонки
-      // Кастомная отрисовка ячейки с кнопкой меню
+  // Состояние столбцов таблицы
+  const [columns, setColumns] = useState([
+    { Header: 'ID', accessor: 'id', width: 50 }, // Столбец ID
+    { Header: 'Автор', accessor: 'author', width: 150 }, // Столбец автора
+    { Header: 'Сообщение', accessor: 'message', width: 300 }, // Столбец сообщения
+    { Header: 'Дата', accessor: 'date', width: 150 }, // Столбец даты
+    {
+      Header: 'Действия',
+      accessor: 'actions',
+      disableSortBy: true, // Отключение сортировки для столбца
       Cell: ({ row }) => (
+        // Кнопка для вызова контекстного меню
         <IconButton
-          color={'inherit'}
+          color="inherit"
           aria-label="more"
           aria-controls="feedback-menu"
           aria-haspopup="true"
-          onClick={(e) => handleClick(e, row.original)} // Открываем меню при клике
+          onClick={(e) => handleClick(e, row.original)}
         >
           <MoreVertIcon />
         </IconButton>
       ),
-      width: 80 
-    }
+      width: 80,
+    },
   ]);
 
-  // Функция для перестановки колонок при drag-and-drop
+  // Функция для изменения порядка столбцов при перетаскивании
   const reorderColumns = (draggedId, targetId) => {
-    // Находим индексы перемещаемой и целевой колонок
-    const draggedIndex = columns.findIndex(col => col.accessor === draggedId);
-    const targetIndex = columns.findIndex(col => col.accessor === targetId);
-    
-    // Проверяем, найдены ли индексы
+    // Поиск индексов перетаскиваемого и целевого столбцов
+    const draggedIndex = columns.findIndex((col) => col.accessor === draggedId);
+    const targetIndex = columns.findIndex((col) => col.accessor === targetId);
+    // Если один из столбцов не найден, прерываем выполнение
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // Создаем новый массив колонок
+    // Создание нового массива столбцов
     const newColumns = [...columns];
-    // Удаляем перемещаемую колонку
+    // Удаление перетаскиваемого столбца и вставка его на новое место
     const [removed] = newColumns.splice(draggedIndex, 1);
-    // Вставляем её в новую позицию
     newColumns.splice(targetIndex, 0, removed);
-    
-    // Обновляем состояние колонок
+    // Обновление состояния столбцов
     setColumns(newColumns);
   };
 
-  // Мемоизация колонок и данных для оптимизации производительности
+  // Мемоизация столбцов и данных для предотвращения лишних рендеров
   const memoizedColumns = useMemo(() => columns, [columns]);
-  const memoizedData = useMemo(() => feedbacks || [], [feedbacks]);
+  const memoizedData = useMemo(() => feedbacks, [feedbacks]);
 
-  // Инициализация таблицы с использованием react-table
-  const {
-    getTableProps, // Пропсы для всей таблицы
-    getTableBodyProps, // Пропсы для тела таблицы
-    headerGroups, // Группы заголовков
-    rows, // Строки данных
-    prepareRow, // Функция для подготовки строки к рендерингу
-  } = useTable(
+  // Настройка таблицы с использованием react-table
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable(
     {
-      columns: memoizedColumns, // Колонки таблицы
-      data: memoizedData, // Данные таблицы
-      initialState: {
-        sortBy: [{ id: 'id', desc: true }] // Начальная сортировка по ID (по убыванию)
-      }
+      columns: memoizedColumns, // Мемоированные столбцы
+      data: memoizedData, // Мемоированные данные
+      initialState: { sortBy: [{ id: 'id', desc: true }] }, // Начальная сортировка по ID (убывание)
     },
-    useSortBy // Подключаем хук для сортировки
+    useSortBy // Подключение хука сортировки
   );
 
-  // Обработка состояний до рендеринга таблицы
-  // Если идет загрузка и нет отзывов, показываем индикатор загрузки
-  if (loadingFeedbacks && feedbacks.length === 0) return <CircularProgress />;
-  // Если есть ошибка, показываем уведомление об ошибке
-  if (error) return <Alert severity="error">{error}</Alert>;
-  // Если нет отзывов, показываем сообщение
-  if (!feedbacks || feedbacks.length === 0) return <Typography>Нет отзывов</Typography>;
+  // Условный рендеринг в зависимости от состояния загрузки и данных
+  if (isLoading && feedbacks.length === 0) return <CircularProgress />; // Индикатор начальной загрузки
+  if (isError) return <Alert severity="error">{error?.data?.message || 'Ошибка загрузки отзывов'}</Alert>; // Сообщение об ошибке
+  if (feedbacks.length === 0 && !isLoading) return <Typography>Нет отзывов</Typography>; // Сообщение, если данные отсутствуют
 
-  // Рендеринг компонента
+  // Основной рендеринг компонента
   return (
-    // Оборачиваем таблицу в провайдер drag-and-drop
+    // Провайдер для поддержки перетаскивания столбцов
     <DndProvider backend={HTML5Backend}>
       <Box sx={{ width: '100%', overflow: 'hidden' }}>
-        {/* Контейнер таблицы с поддержкой скролла */}
-        <TableContainer 
-          ref={tableContainerRef} // Реф для отслеживания скролла
-          component={Paper} // Используем Paper для стилизации
+        {/* Контейнер таблицы с вертикальной и горизонтальной прокруткой */}
+        <TableContainer
+          ref={tableContainerRef}
+          component={Paper}
           sx={{
-            maxHeight: 'calc(100vh - 200px)', // Ограничиваем высоту таблицы
-            backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон в зависимости от темы
-            overflowX: 'auto', // Горизонтальный скролл при необходимости
-            '&::-webkit-scrollbar': {
-              height: '6px' // Стилизация полосы прокрутки
-            }
+            maxHeight: 'calc(100vh - 200px)', // Ограничение высоты для прокрутки
+            backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона в зависимости от темы
+            overflowX: 'auto', // Горизонтальная прокрутка
+            '&::-webkit-scrollbar': { height: '6px' }, // Стилизация полосы прокрутки
           }}
         >
-          {/* Таблица Material-UI */}
-          <Table 
-            {...getTableProps()} // Пропсы от react-table
-            size="small" // Компактный размер ячеек
-            stickyHeader // Фиксированный заголовок
-          >
-            {/* Заголовок таблицы */}
+          {/* Таблица с фиксированным заголовком */}
+          <Table {...getTableProps()} size="small" stickyHeader>
             <TableHead>
-              {headerGroups.map(headerGroup => (
+              {headerGroups.map((headerGroup) => (
                 <TableRow {...headerGroup.getHeaderGroupProps()}>
-                  {headerGroup.headers.map(column => (
-                    // Кастомный компонент для заголовков с поддержкой drag-and-drop
-                    <DraggableColumnHeader 
+                  {headerGroup.headers.map((column) => (
+                    // Компонент для перетаскиваемых заголовков
+                    <DraggableColumnHeader
                       key={column.id}
                       column={column}
-                      reorderColumns={reorderColumns} // Функция для перестановки колонок
+                      reorderColumns={reorderColumns}
                       sx={{
-                        backgroundColor: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Фон заголовка
+                        backgroundColor: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Цвет фона заголовка
                         color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста
                         fontWeight: 'bold', // Жирный шрифт
-                        minWidth: column.width, // Минимальная ширина колонки
-                        // Фиксация колонки ID на мобильных устройствах
+                        minWidth: column.width, // Минимальная ширина столбца
+                        // Фиксация столбца ID на мобильных устройствах
                         position: column.Header === 'ID' && isMobile ? 'sticky' : null,
                         left: column.Header === 'ID' && isMobile ? 0 : null,
-                        zIndex: column.Header === 'ID' && isMobile ? 1 : null
+                        zIndex: column.Header === 'ID' && isMobile ? 1 : null,
                       }}
                     />
                   ))}
                 </TableRow>
               ))}
             </TableHead>
-            {/* Тело таблицы */}
             <TableBody {...getTableBodyProps()}>
-              {rows.map(row => {
-                prepareRow(row); // Подготавливаем строку для рендеринга
+              {rows.map((row) => {
+                prepareRow(row); // Подготовка строки для рендеринга
                 return (
                   <TableRow {...row.getRowProps()}>
-                    {row.cells.map(cell => (
-                      <TableCell 
+                    {row.cells.map((cell) => (
+                      <TableCell
                         {...cell.getCellProps()}
                         sx={{
-                          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон ячейки
+                          backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона ячейки
                           color: isDarkMode ? '#ffffff' : '#000000', // Цвет текста
-                          minWidth: cell.column.width, // Минимальная ширина
-                          // Фиксация колонки ID на мобильных устройствах
+                          minWidth: cell.column.width, // Минимальная ширина ячейки
+                          // Фиксация столбца ID на мобильных устройствах
                           position: cell.column.Header === 'ID' && isMobile ? 'sticky' : null,
                           left: cell.column.Header === 'ID' && isMobile ? 0 : null,
-                          zIndex: cell.column.Header === 'ID' && isMobile ? 1 : null
+                          zIndex: cell.column.Header === 'ID' && isMobile ? 1 : null,
                         }}
                       >
-                        {cell.render('Cell')} {/* Рендерим содержимое ячейки */}
+                        {cell.render('Cell')} {/* Рендеринг содержимого ячейки */}
                       </TableCell>
                     ))}
                   </TableRow>
                 );
               })}
-              
               {/* Индикатор загрузки при подгрузке новых данных */}
-              {loadingFeedbacks && feedbacks.length > 0 && (
+              {isFetching && feedbacks.length > 0 && (
                 <TableRow>
                   <TableCell colSpan={columns.length} align="center">
-                    <CircularProgress size={24} /> {/* Спиннер загрузки */}
+                    <CircularProgress size={24} />
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* Информация о пагинации */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          mt: 1, // Отступ сверху
-          color: isDarkMode ? '#ffffff' : '#000000' // Цвет текста
-        }}>
+        {/* Отображение информации о пагинации */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mt: 1,
+            color: isDarkMode ? '#ffffff' : '#000000',
+          }}
+        >
           <Typography variant="body2">
-            Страница {feedbacksPagination.currentPage} из {feedbacksPagination.totalPages} • 
-            Всего отзывов: {feedbacksPagination.totalItems}
+            Страница {feedbacksPagination.currentPage} из {feedbacksPagination.totalPages} • Всего
+            отзывов: {feedbacksPagination.totalItems}
           </Typography>
         </Box>
-
-        {/* Меню действий для отзыва */}
+        {/* Контекстное меню для действий с отзывом */}
         <Menu
           id="feedback-menu"
-          anchorEl={anchorEl} // Элемент, к которому привязано меню
-          open={open} // Флаг открытия
-          onClose={handleClose} // Обработчик закрытия
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
           PaperProps={{
             style: {
-              backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Фон меню
-              color: isDarkMode ? '#ffffff' : '#111111' // Цвет текста
-            }
+              backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff', // Цвет фона меню
+              color: isDarkMode ? '#ffffff' : '#111111', // Цвет текста
+            },
           }}
         >
           <MenuItem onClick={handleDelete}>Удалить</MenuItem>
@@ -340,5 +307,5 @@ const FeedbacksTable = () => {
   );
 };
 
-// Экспортируем компонент по умолчанию
+// Экспорт компонента по умолчанию
 export default FeedbacksTable;

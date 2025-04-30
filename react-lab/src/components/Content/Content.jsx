@@ -65,6 +65,7 @@ const Content = () => {
       sx={{ 
         p: { xs: 2, sm: 3, md: 4 },
         m: { xs: 1, sm: 2, md: 3 },
+        mb: { xs: 8, sm: 3 },
         backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
         color: isDarkMode ? '#ffffff' : '#000000'
       }}
